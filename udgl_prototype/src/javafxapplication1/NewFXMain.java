@@ -30,6 +30,7 @@ public class NewFXMain extends Application {
     
     @Override
     public void start(Stage primaryStage) {
+        //s dfksdjfksdjfk
         primaryStage.setTitle("Detective Glass");
         Group root = new Group();
         Scene scene = new Scene(root, 500, 431,Color.BLACK);

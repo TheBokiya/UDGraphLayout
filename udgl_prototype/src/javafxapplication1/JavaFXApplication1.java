@@ -13,6 +13,7 @@ import edu.uci.ics.jung.graph.util.Pair;
 import edu.uci.ics.jung.graph.util.TestGraphs;
 import edu.uci.ics.jung.visualization.DefaultVisualizationModel;
 import edu.uci.ics.jung.visualization.VisualizationModel;
+import edu.uci.ics.jung.visualization.picking.PickedState;
 import java.awt.Dimension;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
@@ -42,6 +43,10 @@ import javafx.stage.Stage;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Shape;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
+import javafx.scene.text.TextBuilder;
 import static javafxtest.WhereIsHe.makeDraggable;
 
 /**
@@ -80,14 +85,24 @@ public class JavaFXApplication1 extends Application {
         final Group group1 = new Group();
         final Group group2 = new Group();
 
-
-
-
         //Visualizing graph 1 using Jung
         Graph<String, Number> graph1 = TestGraphs.getOneComponentGraph();
         Layout<String, Number> layout1 = new CircleLayout<String, Number>(graph1);
         final UndirectedSparseMultigraph<Circle, Line> newGraph1 = convertGraph(graph1, layout1);
         drawGraph(newGraph1, group1);
+
+        for (Circle circle : newGraph1.getVertices()) {
+            Text t = TextBuilder.create()
+                    .text(circle.toString().substring(7))
+                    .x(circle.getCenterX())
+                    .y(circle.getCenterY() - (CIRCLE_SIZE + 5))
+                    .fill(Color.BLUEVIOLET)
+                    .font(Font.font("Verdana", 10))
+                    .textAlignment(TextAlignment.CENTER)
+                    .build();
+            root.getChildren().add(t);
+        }
+
 
         // Visualizing graph 2
         Graph<String, Number> graph2 = TestGraphs.getOneComponentGraph();
@@ -99,13 +114,12 @@ public class JavaFXApplication1 extends Application {
         root.getChildren().addAll(group1, group2);
 
 
-
+        root.translateYProperty().set(50);
         // Shift group 2 to the right by 400px
         group2.translateXProperty().set(500);
-        
+
         Button clearPickedBtn = new Button("Clear");
         clearPickedBtn.setOnAction(new EventHandler<ActionEvent>() {
-
             @Override
             public void handle(ActionEvent t) {
                 PICKED.clear();
@@ -115,21 +129,20 @@ public class JavaFXApplication1 extends Application {
                 System.out.println(PICKED);
             }
         });
-        
+
         root.getChildren().add(clearPickedBtn);
 
-//        Button subLayoutBtn = new Button("FRLayout");
-//        subLayoutBtn.setOnAction(new EventHandler<ActionEvent>() {
-//            @Override
-//            public void handle(ActionEvent t) {
-//                System.out.println("FRLayout is pressed!");
-//                UndirectedSparseMultigraph<Circle, Line> generateGraph = generateGraph(PICKED);
-////                UndirectedSparseMultigraph<String, Number> convertBackGraph = convertBackGraph(generateGraph);
-////                System.out.println(convertBackGraph);
-//            }
-//        });
-//
-//        root.getChildren().add(subLayoutBtn);
+        Button subLayoutBtn = new Button("FRLayout");
+        subLayoutBtn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent t) {
+                System.out.println("FRLayout is pressed!");
+                UndirectedSparseMultigraph<Circle, Line> generateGraph = generateGraph(PICKED, newGraph1);
+                System.out.println(generateGraph);
+            }
+        });
+
+        root.getChildren().add(subLayoutBtn);
 
 
 
@@ -149,14 +162,14 @@ public class JavaFXApplication1 extends Application {
 //                }
 //            }
 //        });
-        
+
         // Uncomment these to enable the lens
-        final StackPane lensLayout = applyViewfinder(root, 1100, 500, newGraph1);
-        final Scene scene = new Scene(lensLayout);
+//        final StackPane lensLayout = applyViewfinder(root, 1100, 500, newGraph1);
+//        final Scene scene = new Scene(lensLayout);
 
 
         // Uncomment this to disable the lens
-//        Scene scene = new Scene(root, 1000, 500, Color.WHITE);
+        Scene scene = new Scene(root, 1000, 500, Color.WHITE);
 
 //        lensBtn.translateXProperty().set(1000);
 //        lensBtn.translateYProperty().set(100);
@@ -245,18 +258,19 @@ public class JavaFXApplication1 extends Application {
 //        return resultGraph;
 //    }
     
-    public UndirectedSparseMultigraph<Circle, Line> generateGraph(ArrayList<Circle> arrayList) {
+    // Generate a graph for the picked vertices
+    
+    public UndirectedSparseMultigraph<Circle, Line> generateGraph(ArrayList<Circle> picked, UndirectedSparseMultigraph<Circle, Line> graph) {
         UndirectedSparseMultigraph returnGraph = new UndirectedSparseMultigraph<>();
-//        for (Line l : graph.getEdges()) {
-//            for (int i = 0; i < arrayList.size(); i++) {
-//                Pair<Circle> endpoints = graph.getEndpoints(l);
-//                if (endpoints.getFirst().equals(arrayList.get(i))) {
-//                    returnGraph.addVertex(graph);
-//                }
-//            }
-//        }
-        for (int i = 0; i < arrayList.size(); i++) {
-            returnGraph.addVertex(arrayList.get(i));
+        for (Circle c : picked) {
+            returnGraph.addVertex(c);
+            Collection<Line> incidentEdges = graph.getIncidentEdges(c);
+            for (Line l : incidentEdges) {
+                Pair<Circle> endpoints = graph.getEndpoints(l);
+                if (picked.containsAll(endpoints)) {
+                    returnGraph.addEdge(l, endpoints.getFirst(), endpoints.getSecond());
+                }
+            }
         }
         return returnGraph;
     }
@@ -290,6 +304,7 @@ public class JavaFXApplication1 extends Application {
                 .centerY(p.getY())
                 .radius(CIRCLE_SIZE)
                 .build();
+
         circle.setOnMouseClicked(new EventHandler<MouseEvent>() {
             //Clicked the circle to select and changes its color to dark red.
             @Override
@@ -378,12 +393,15 @@ public class JavaFXApplication1 extends Application {
         node.setOnScroll(new EventHandler<ScrollEvent>() {
             @Override
             public void handle(ScrollEvent t) {
-                    node.setScaleX(t.getDeltaY()/50);
-                    node.setScaleY(t.getDeltaY()/50);
-                    System.out.println(VIEWFINDER_WIDTH);
-                    System.err.println(VIEWFINDER_HEIGHT);
-            };
-        });
+                node.setScaleX(t.getDeltaY() / 50);
+                node.setScaleY(t.getDeltaY() / 50);
+                System.out.println(VIEWFINDER_WIDTH);
+                System.err.println(VIEWFINDER_HEIGHT);
+            }
+        ;
+    }
+
+    );
     }
 
     private static class Delta {
@@ -417,18 +435,23 @@ public class JavaFXApplication1 extends Application {
             }
         });
 
-
-
         // Add the circles that are in the viewfinder to the PICKED arraylist
         viewfinder.setOnMouseReleased(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent t) {
-                Collection<Circle> vertices = graph.getVertices();
-                for (Circle c : vertices) {
-                    if (c.intersects(viewfinder.getLayoutX(), viewfinder.getLayoutY(), VIEWFINDER_WIDTH, VIEWFINDER_HEIGHT)) {
+                for (Circle c : graph.getVertices()) {
+                    if (viewfinder.getBoundsInParent().intersects(c.getBoundsInParent())) {
+//                    if ( (c.getCenterX() > viewfinder.getLayoutX()) && (c.getCenterX() < viewfinder.getLayoutX()+VIEWFINDER_WIDTH)
+//                            && (c.getCenterY() > viewfinder.getLayoutY()) && (c.getCenterY() < viewfinder.getLayoutY()+VIEWFINDER_HEIGHT)) {
+                        System.out.println(c.toString().substring(7) + ": TRUE");
+
                         PICKED.add(c);
+                    } else {
+                        System.out.println(c.toString().substring(7) + ": FALSE");
                     }
                 }
+//                System.out.println("ViewfinderX " + viewfinder.getLayoutX());
+//                System.err.println("ViewfinderY " + viewfinder.getLayoutY());
                 System.out.println(PICKED);
             }
         });

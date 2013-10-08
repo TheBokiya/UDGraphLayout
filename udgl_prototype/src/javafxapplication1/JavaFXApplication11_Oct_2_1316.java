@@ -5,21 +5,26 @@
 package javafxapplication1;
 
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
+import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.algorithms.layout.SpringLayout;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.UndirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.util.Pair;
 import edu.uci.ics.jung.graph.util.TestGraphs;
+import edu.uci.ics.jung.visualization.BasicVisualizationServer;
 import edu.uci.ics.jung.visualization.DefaultVisualizationModel;
 import edu.uci.ics.jung.visualization.VisualizationModel;
 import edu.uci.ics.jung.visualization.picking.PickedState;
 import java.awt.Dimension;
 import java.awt.geom.Point2D;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -53,7 +58,7 @@ import static javafxtest.WhereIsHe.makeDraggable;
  *
  * @author timheng
  */
-public class JavaFXApplication1 extends Application {
+public class JavaFXApplication11_Oct_2_1316 extends Application {
 
     /**
      * The main() method is ignored in correctly deployed JavaFX application.
@@ -84,6 +89,7 @@ public class JavaFXApplication1 extends Application {
 
         final Group group1 = new Group();
         final Group group2 = new Group();
+        final Group group3 = new Group();
 
         //Visualizing graph 1 using Jung
         Graph<String, Number> graph1 = TestGraphs.getOneComponentGraph();
@@ -129,6 +135,8 @@ public class JavaFXApplication1 extends Application {
                 System.out.println(PICKED);
             }
         });
+        
+        clearPickedBtn.translateYProperty().set(50);
 
         root.getChildren().add(clearPickedBtn);
 
@@ -137,11 +145,19 @@ public class JavaFXApplication1 extends Application {
             @Override
             public void handle(ActionEvent t) {
                 System.out.println("FRLayout is pressed!");
-                UndirectedSparseMultigraph<Circle, Line> generateGraph = generateGraph(PICKED, newGraph1);
-                System.out.println(generateGraph);
+                UndirectedSparseMultigraph<Circle, Line> generateGraph = null;
+                try {
+                    generateGraph = generateGraph(PICKED, newGraph1);
+                } catch (Exception ex) {
+                    Logger.getLogger(JavaFXApplication11_Oct_2_1316.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                drawGraph(generateGraph, group3);
             }
         });
+        
+        group3.translateXProperty().set(1000);
 
+        root.getChildren().add(group3);
         root.getChildren().add(subLayoutBtn);
 
 
@@ -179,7 +195,7 @@ public class JavaFXApplication1 extends Application {
         // Show the scene.
         stage.setTitle("Simple Graph");
         stage.setScene(scene);
-        stage.setResizable(false);
+        stage.setResizable(true);
         stage.show();
 
     }
@@ -231,48 +247,46 @@ public class JavaFXApplication1 extends Application {
 
             undirectGraph.addEdge(line, first, second);
         }
+        
+        System.out.println(layout.toString());
 
         return undirectGraph;
 
     }
-
-//    public UndirectedSparseMultigraph<String, Number> convertBackGraph(UndirectedSparseMultigraph<Circle, Line> graph) {
-//        Map<Circle, String> toString = new HashMap<>();
-//        Map<Line, Number> toNumber = new HashMap<>();
-//        
-//        
-//        UndirectedSparseMultigraph<String, Number> resultGraph = new UndirectedOrderedSparseMultigraph<>();
-//        
-//        for (Line l : graph.getEdges()) {
-//            Pair<Circle> endpoints = graph.getEndpoints(l);
-//            
-//            String first, second = null;
-//            
-//            first = toString.get(endpoints.getFirst());
-//            second = toString.get(endpoints.getSecond());
-//            
-//            Number number = toNumber.get(l);
-//            
-//            resultGraph.addEdge(number, first, second);
-//        }
-//        return resultGraph;
-//    }
     
     // Generate a graph for the picked vertices
     
-    public UndirectedSparseMultigraph<Circle, Line> generateGraph(ArrayList<Circle> picked, UndirectedSparseMultigraph<Circle, Line> graph) {
-        UndirectedSparseMultigraph returnGraph = new UndirectedSparseMultigraph<>();
+    public UndirectedSparseMultigraph<Circle, Line> generateGraph(ArrayList<Circle> picked, UndirectedSparseMultigraph<Circle, Line> graph) throws Exception {
+        UndirectedSparseMultigraph<Circle, Line> subGraph = new UndirectedSparseMultigraph<>();
+        
+        int count = graph.getVertexCount();
         for (Circle c : picked) {
-            returnGraph.addVertex(c);
+            subGraph.addVertex(c);
             Collection<Line> incidentEdges = graph.getIncidentEdges(c);
             for (Line l : incidentEdges) {
                 Pair<Circle> endpoints = graph.getEndpoints(l);
                 if (picked.containsAll(endpoints)) {
-                    returnGraph.addEdge(l, endpoints.getFirst(), endpoints.getSecond());
+                    subGraph.addEdge(l, endpoints.getFirst(), endpoints.getSecond());
                 }
             }
         }
-        return returnGraph;
+                Layout<Circle, Line> subLayout = getLayoutFor(CircleLayout.class, subGraph);
+                BasicVisualizationServer<Circle, Line> vv = new BasicVisualizationServer<Circle, Line>(subLayout);
+                vv.setPreferredSize(new Dimension(250, 250));
+        Collection<Circle> vertices = subGraph.getVertices();
+        
+        for (Circle c : vertices) {
+            c.setCenterX(subLayout.transform(c).getX());
+            c.setCenterY(subLayout.transform(c).getY());
+        }
+        
+        return subGraph;
+    }
+    
+    private Layout getLayoutFor(Class layoutClass, Graph graph) throws Exception {
+    	Object[] args = new Object[]{graph};
+    	Constructor constructor = layoutClass.getConstructor(new Class[] {Graph.class});
+    	return  (Layout)constructor.newInstance(args);
     }
 
     public Layout<Circle, Line> convertLayout(UndirectedSparseMultigraph<Circle, Line> graph, String layoutType) {
@@ -347,7 +361,7 @@ public class JavaFXApplication1 extends Application {
     }
 
     public static void makeDraggable(final Node node) {
-        final JavaFXApplication1.Delta dragDelta = new JavaFXApplication1.Delta();
+        final JavaFXApplication11_Oct_2_1316.Delta dragDelta = new JavaFXApplication11_Oct_2_1316.Delta();
         node.setOnMousePressed(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {

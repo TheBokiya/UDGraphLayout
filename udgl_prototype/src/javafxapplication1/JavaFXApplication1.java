@@ -5,34 +5,47 @@
 package javafxapplication1;
 
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
+import edu.uci.ics.jung.algorithms.layout.FRLayout;
+import edu.uci.ics.jung.algorithms.layout.ISOMLayout;
+import edu.uci.ics.jung.algorithms.layout.KKLayout;
 import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.algorithms.layout.SpringLayout;
+import edu.uci.ics.jung.algorithms.layout.StaticLayout;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.UndirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.util.Pair;
 import edu.uci.ics.jung.graph.util.TestGraphs;
+import edu.uci.ics.jung.visualization.BasicVisualizationServer;
 import edu.uci.ics.jung.visualization.DefaultVisualizationModel;
 import edu.uci.ics.jung.visualization.VisualizationModel;
-import edu.uci.ics.jung.visualization.picking.PickedState;
 import java.awt.Dimension;
 import java.awt.geom.Point2D;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Separator;
+import javafx.scene.control.Slider;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.CircleBuilder;
@@ -45,7 +58,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextBuilder;
 import static javafxtest.WhereIsHe.makeDraggable;
 
@@ -69,39 +81,51 @@ public class JavaFXApplication1 extends Application {
     private static final Color MASK_TINT = Color.GREY.deriveColor(0, 1, 1, 0.97);
     private static double VIEWFINDER_WIDTH = 200;
     private static double VIEWFINDER_HEIGHT = 200;
-
+    
+    private static Class[] layoutClasses = new Class[]{CircleLayout.class, SpringLayout.class, FRLayout.class, KKLayout.class, StaticLayout.class, ISOMLayout.class};
+    private double posX = 0;
+    private double posY = 0;
+    private int sublayoutDimension = 200;
+    
     public static void main(String[] args) {
         launch(args);
-
+        
     }
-
+    
     @Override
     public void start(final Stage stage) throws Exception {
 
         //Initializing the root group, scene, and the 2 sub groups.
         //Root -> Scene -> group1, group2
         final Group root = new Group();
-
+        
         final Group group1 = new Group();
         final Group group2 = new Group();
+//        final Group group3 = new Group();
+        
+        final HBox hbox = new HBox();
+        hbox.setPadding(new Insets(15, 12, 15, 12));
+        hbox.setSpacing(10);
+        hbox.setStyle("-fx-background-color: #EA6045");
+        hbox.translateYProperty().setValue(0);
 
         //Visualizing graph 1 using Jung
-        Graph<String, Number> graph1 = TestGraphs.getOneComponentGraph();
+        Graph<String, Number> graph1 = TestGraphs.getDemoGraph();
         Layout<String, Number> layout1 = new CircleLayout<String, Number>(graph1);
         final UndirectedSparseMultigraph<Circle, Line> newGraph1 = convertGraph(graph1, layout1);
         drawGraph(newGraph1, group1);
-
-        for (Circle circle : newGraph1.getVertices()) {
-            Text t = TextBuilder.create()
-                    .text(circle.toString().substring(7))
-                    .x(circle.getCenterX())
-                    .y(circle.getCenterY() - (CIRCLE_SIZE + 5))
-                    .fill(Color.BLUEVIOLET)
-                    .font(Font.font("Verdana", 10))
-                    .textAlignment(TextAlignment.CENTER)
-                    .build();
-            root.getChildren().add(t);
-        }
+        
+//        for (Circle circle : newGraph1.getVertices()) {
+//            Text t = TextBuilder.create()
+//                    .text(circle.toString().substring(7))
+//                    .x(circle.getCenterX())
+//                    .y(circle.getCenterY() - (CIRCLE_SIZE + 5))
+//                    .fill(Color.BLUEVIOLET)
+//                    .font(Font.font("Verdana", 10))
+//                    .textAlignment(TextAlignment.CENTER)
+//                    .build();
+//            root.getChildren().add(t);
+//        }
 
 
         // Visualizing graph 2
@@ -110,15 +134,17 @@ public class JavaFXApplication1 extends Application {
         VisualizationModel<String, Number> vm2 = new DefaultVisualizationModel<>(layout2, new Dimension(400, 400));
         UndirectedSparseMultigraph<Circle, Line> newGraph2 = convertGraph(graph2, layout2);
         drawGraph(newGraph2, group2);
-
+        
         root.getChildren().addAll(group1, group2);
-
-
-        root.translateYProperty().set(50);
-        // Shift group 2 to the right by 400px
-        group2.translateXProperty().set(500);
-
-        Button clearPickedBtn = new Button("Clear");
+        
+        // Shift group 2 to the right by 1000px
+        group2.translateXProperty().set(1000);
+        
+        group1.translateYProperty().set(100);
+        group2.translateYProperty().set(100);
+        
+        // A button to clear the selected vertices from the PICKED arraylist
+        Button clearPickedBtn = new Button("Clear Selections");
         clearPickedBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent t) {
@@ -129,61 +155,127 @@ public class JavaFXApplication1 extends Application {
                 System.out.println(PICKED);
             }
         });
+        
+        hbox.getChildren().add(clearPickedBtn);
+        
+        // Creates buttons for all the layouts in the layoutClasses array
+        for (final Class c : layoutClasses) {
+            Button button = new Button(c.getSimpleName());
+            button.setOnAction(new EventHandler<ActionEvent>() {
 
-        root.getChildren().add(clearPickedBtn);
+                @Override
+                public void handle(ActionEvent t) {
+                    UndirectedSparseMultigraph<Circle, Line> genGraph = null;
+                    try {
+                        
+                        // Generate an undirected sparse multigraph with selected layout
+                        genGraph = generateGraph(PICKED, newGraph1, c, new Dimension(sublayoutDimension, sublayoutDimension));
+                        
+                    } catch (Exception ex) {
+                        Logger.getLogger(JavaFXApplication1.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    
+                    // Remove the vertices and edges from the group before adding the new ones to avoid
+                    // "duplication of children" error
+                    for (Circle c : genGraph.getVertices()) {
+                        for (Line l : genGraph.getEdges())
+                        {
+                            group1.getChildren().remove(l);
+                            group1.getChildren().remove(c);
+                        }
+                    }
+                    drawGraph(genGraph, group1);
+                    
+                    
+                }
+            });
+            hbox.getChildren().add(button);
+        }
+        
+        final Text posText = TextBuilder.create()
+                .text("Pos X: " + posX + ", Pos Y: " + posY)
+                .font(Font.font("Verdana", 12))
+                .fill(Color.WHITE)
+                .build();
+        
+        final Text bullseye = TextBuilder.create()
+                .text("X")
+                .fill(Color.BLUE)
+                .build();
+        
+        
+        hbox.getChildren().addAll(posText);
+        
+        Separator seperator = new Separator(Orientation.VERTICAL);
+        
+        final Text subLayoutWidth = TextBuilder.create()
+                .text("SubLayout Width: " + sublayoutDimension)
+                .font(Font.font("Verdana", 12))
+                .fill(Color.WHITE)
+                .build();
+        
+        final Text subLayoutHeight = TextBuilder.create()
+                .text("SubLayout Height: " + sublayoutDimension)
+                .font(Font.font("Verdana", 12))
+                .fill(Color.WHITE)
+                .build();
+        
+        Slider slider = new Slider();
+        slider.setMin(10);
+        slider.setMax(500);
+        slider.setValue(200);
+        slider.setShowTickLabels(true);
+        slider.setShowTickMarks(true);
+        slider.setBlockIncrement(5);
+        slider.setSnapToTicks(true);
+        
+        slider.valueProperty().addListener(new ChangeListener<Number>() {
 
-        Button subLayoutBtn = new Button("FRLayout");
-        subLayoutBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
-            public void handle(ActionEvent t) {
-                System.out.println("FRLayout is pressed!");
-                UndirectedSparseMultigraph<Circle, Line> generateGraph = generateGraph(PICKED, newGraph1);
-                System.out.println(generateGraph);
+            public void changed(ObservableValue<? extends Number> ov, Number t, Number t1) {
+                sublayoutDimension = t1.intValue();
+                subLayoutWidth.setText("SubLayout Width: " + sublayoutDimension);
+                subLayoutHeight.setText("SubLayout Height: " + sublayoutDimension);
             }
         });
+        
+        
+        
+        hbox.getChildren().addAll(seperator, subLayoutWidth, subLayoutHeight, slider);
 
-        root.getChildren().add(subLayoutBtn);
-
-
-
-//        final ToggleButton lensBtn = new ToggleButton("Lens");
-//        lensBtn.selectedProperty().addListener(new ChangeListener<Boolean>() {
-//            @Override
-//            public void changed(ObservableValue<? extends Boolean> ov, Boolean t, Boolean t1) {
-//                if (t1) {
-//                    System.out.println("Lens enabled");
-//                    StackPane lensLayout = applyViewfinder(root, 1000, 500);
-//                    Scene scene = new Scene(lensLayout);
-//                    stage.setScene(scene);
-//                } else {
-//                    System.out.println("Lens disabled");
-//                    Scene scene = new Scene(root, 1100, 500, Color.WHITE);
-//                    stage.setScene(scene);
-//                }
-//            }
-//        });
-
+        root.getChildren().addAll(hbox, bullseye);
+        
         // Uncomment these to enable the lens
-//        final StackPane lensLayout = applyViewfinder(root, 1100, 500, newGraph1);
+//        final StackPane lensLayout = applyViewfinder(root, 1100, 600, newGraph1);
 //        final Scene scene = new Scene(lensLayout);
 
 
         // Uncomment this to disable the lens
-        Scene scene = new Scene(root, 1000, 500, Color.WHITE);
+        Scene scene = new Scene(root, 1500, 600, Color.WHITE);
+        
+        scene.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
 
-//        lensBtn.translateXProperty().set(1000);
-//        lensBtn.translateYProperty().set(100);
-//        root.getChildren().add(lensBtn);
+            @Override
+            public void handle(MouseEvent e) {
+                if (e.getButton() == MouseButton.SECONDARY) {
+                    posX = e.getX();
+                    posY = e.getY();
+                    posText.setText("Pos X: " + posX + ", Pos Y: " + posY);
+                    bullseye.setX(posX);
+                    bullseye.setY(posY);
+                }
+            }
+        });
 
 
         // Show the scene.
         stage.setTitle("Simple Graph");
         stage.setScene(scene);
-        stage.setResizable(false);
+        stage.setResizable(true);
         stage.show();
-
+        
     }
-
+    
     public UndirectedSparseMultigraph<Circle, Line> convertGraph(Graph<String, Number> graph, Layout<String, Number> layout) {
         // look up the circle object used for the string vertex
         Map<String, Circle> toCircle = new HashMap<>();
@@ -205,97 +297,85 @@ public class JavaFXApplication1 extends Application {
             // create the circles
             Circle first = null;
             Circle second = null;
-
+            
             if (!toCircle.containsKey(endpoints.getFirst())) {
                 first = createCircleVertex(layout, endpoints.getFirst());
                 toCircle.put(endpoints.getFirst(), first);
             } else {
                 first = toCircle.get(endpoints.getFirst());
             }
-
+            
             if (!toCircle.containsKey(endpoints.getSecond())) {
                 second = createCircleVertex(layout, endpoints.getSecond());
                 toCircle.put(endpoints.getSecond(), second);
             } else {
                 second = toCircle.get(endpoints.getSecond());
             }
-
+            
             Line line = LineBuilder.create()
                     .build();
             line.startXProperty().bind(first.centerXProperty());
             line.startYProperty().bind(first.centerYProperty());
             line.endXProperty().bind(second.centerXProperty());
             line.endYProperty().bind(second.centerYProperty());
-
+            
             toLine.put(n, line);
-
+            
             undirectGraph.addEdge(line, first, second);
         }
-
+        
+        System.out.println(layout.toString());
+        
         return undirectGraph;
-
+        
     }
 
-//    public UndirectedSparseMultigraph<String, Number> convertBackGraph(UndirectedSparseMultigraph<Circle, Line> graph) {
-//        Map<Circle, String> toString = new HashMap<>();
-//        Map<Line, Number> toNumber = new HashMap<>();
-//        
-//        
-//        UndirectedSparseMultigraph<String, Number> resultGraph = new UndirectedOrderedSparseMultigraph<>();
-//        
-//        for (Line l : graph.getEdges()) {
-//            Pair<Circle> endpoints = graph.getEndpoints(l);
-//            
-//            String first, second = null;
-//            
-//            first = toString.get(endpoints.getFirst());
-//            second = toString.get(endpoints.getSecond());
-//            
-//            Number number = toNumber.get(l);
-//            
-//            resultGraph.addEdge(number, first, second);
-//        }
-//        return resultGraph;
-//    }
-    
     // Generate a graph for the picked vertices
-    
-    public UndirectedSparseMultigraph<Circle, Line> generateGraph(ArrayList<Circle> picked, UndirectedSparseMultigraph<Circle, Line> graph) {
-        UndirectedSparseMultigraph returnGraph = new UndirectedSparseMultigraph<>();
+    public UndirectedSparseMultigraph<Circle, Line> generateGraph(ArrayList<Circle> picked, UndirectedSparseMultigraph<Circle, Line> graph, Class layout, Dimension dimension) throws Exception {
+        
+        UndirectedSparseMultigraph<Circle, Line> subGraph = new UndirectedSparseMultigraph<>();
+        
         for (Circle c : picked) {
-            returnGraph.addVertex(c);
+            subGraph.addVertex(c);
             Collection<Line> incidentEdges = graph.getIncidentEdges(c);
             for (Line l : incidentEdges) {
                 Pair<Circle> endpoints = graph.getEndpoints(l);
                 if (picked.containsAll(endpoints)) {
-                    returnGraph.addEdge(l, endpoints.getFirst(), endpoints.getSecond());
+                    subGraph.addEdge(l, endpoints.getFirst(), endpoints.getSecond());
                 }
             }
         }
-        return returnGraph;
-    }
-
-    public Layout<Circle, Line> convertLayout(UndirectedSparseMultigraph<Circle, Line> graph, String layoutType) {
-        Layout<Circle, Line> resultLayout = null;
-        System.out.println(graph.getVertexCount());
-
-        if (layoutType.equalsIgnoreCase("FR_LAYOUT")) {
-            resultLayout.setGraph(graph);
+        
+        
+        
+        Layout<Circle, Line> subLayout = getLayoutFor(layout, subGraph);
+        BasicVisualizationServer<Circle, Line> vv = new BasicVisualizationServer<Circle, Line>(subLayout, dimension);
+        Collection<Circle> vertices = subGraph.getVertices();
+        
+        for (Circle c : vertices) {
+            c.setCenterX(subLayout.transform(c).getX()+posX-90);
+            c.setCenterY(subLayout.transform(c).getY()+posY-210);
         }
-
-        return resultLayout;
+        
+        return subGraph;
     }
-
+    
+    private Layout getLayoutFor(Class layoutClass, Graph graph) throws Exception {
+        Object[] args = new Object[]{graph};
+        Constructor constructor = layoutClass.getConstructor(new Class[]{Graph.class});
+        return (Layout) constructor.newInstance(args);
+    }
+    
     public void drawGraph(Graph<Circle, Line> graph, Group group) {
         for (Circle c : graph.getVertices()) {
             group.getChildren().add(c);
         }
-
+        
         for (Line l : graph.getEdges()) {
             group.getChildren().add(l);
         }
     }
-
+    
     public Circle createCircleVertex(Layout<String, Number> layout, String vert) {
         // get the xy of the vertex.
         Point2D p = layout.transform(vert);
@@ -304,18 +384,20 @@ public class JavaFXApplication1 extends Application {
                 .centerY(p.getY())
                 .radius(CIRCLE_SIZE)
                 .build();
-
+        
         circle.setOnMouseClicked(new EventHandler<MouseEvent>() {
             //Clicked the circle to select and changes its color to dark red.
             @Override
             public void handle(MouseEvent t) {
                 Circle c = (Circle) t.getSource();
                 c.setFill(Color.DARKRED);
-                PICKED.add(c);
+                if (!PICKED.contains(c)) {
+                    PICKED.add(c);
+                }
                 System.out.println(PICKED);
             }
         });
-
+        
         circle.setOnMousePressed(new EventHandler<MouseEvent>() {
             // Change the color to Rosybrown when pressed.
             @Override
@@ -324,7 +406,7 @@ public class JavaFXApplication1 extends Application {
                 c.setFill(Color.ROSYBROWN);
             }
         });
-
+        
         circle.setOnMouseReleased(new EventHandler<MouseEvent>() {
             // Change it back to black when released.
             @Override
@@ -333,7 +415,7 @@ public class JavaFXApplication1 extends Application {
                 c.setFill(Color.BLACK);
             }
         });
-
+        
         circle.setOnMouseDragged(new EventHandler<MouseEvent>() {
             // Update the circle's position when it's dragged.
             @Override
@@ -345,7 +427,7 @@ public class JavaFXApplication1 extends Application {
         });
         return circle;
     }
-
+    
     public static void makeDraggable(final Node node) {
         final JavaFXApplication1.Delta dragDelta = new JavaFXApplication1.Delta();
         node.setOnMousePressed(new EventHandler<MouseEvent>() {
@@ -365,7 +447,7 @@ public class JavaFXApplication1 extends Application {
         node.setOnMouseDragged(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
-
+                
                 node.relocate(
                         mouseEvent.getSceneX() - dragDelta.x,
                         mouseEvent.getSceneY() - dragDelta.y);
@@ -395,37 +477,35 @@ public class JavaFXApplication1 extends Application {
             public void handle(ScrollEvent t) {
                 node.setScaleX(t.getDeltaY() / 50);
                 node.setScaleY(t.getDeltaY() / 50);
-                System.out.println(VIEWFINDER_WIDTH);
-                System.err.println(VIEWFINDER_HEIGHT);
             }
         ;
     }
-
+    
     );
     }
 
     private static class Delta {
-
+        
         double x, y;
     }
-
+    
     private StackPane applyViewfinder(Node background, double width, double height, final UndirectedSparseMultigraph<Circle, Line> graph) {
-
+        
         final Rectangle mask = new Rectangle(
                 width,
                 height);
-
+        
         final Rectangle viewfinder = new Rectangle(
                 VIEWFINDER_WIDTH,
                 VIEWFINDER_HEIGHT,
                 LENS_TINT);
         makeDraggable(viewfinder);
-
+        
         final Pane viewpane = new Pane();
         viewpane.getChildren().addAll(
                 new Group(),
                 viewfinder);
-
+        
         viewfinder.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
             @Override
             public void changed(ObservableValue<? extends Bounds> observableValue, Bounds bounds, Bounds bounds2) {
@@ -444,7 +524,7 @@ public class JavaFXApplication1 extends Application {
 //                    if ( (c.getCenterX() > viewfinder.getLayoutX()) && (c.getCenterX() < viewfinder.getLayoutX()+VIEWFINDER_WIDTH)
 //                            && (c.getCenterY() > viewfinder.getLayoutY()) && (c.getCenterY() < viewfinder.getLayoutY()+VIEWFINDER_HEIGHT)) {
                         System.out.println(c.toString().substring(7) + ": TRUE");
-
+                        
                         PICKED.add(c);
                     } else {
                         System.out.println(c.toString().substring(7) + ": FALSE");
@@ -472,11 +552,11 @@ public class JavaFXApplication1 extends Application {
                 viewpane);
         return layout;
     }
-
+    
     private void applyStencil(Node stencil, Pane viewpane) {
         viewpane.getChildren().set(0, stencil);
     }
-
+    
     private Node cutStencil(Rectangle mask, Rectangle viewfinder) {
         Shape stencil = Shape.subtract(mask, viewfinder);
         stencil.setFill(MASK_TINT);

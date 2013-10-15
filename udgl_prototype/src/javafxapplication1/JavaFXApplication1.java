@@ -115,27 +115,7 @@ public class JavaFXApplication1 extends Application {
         final UndirectedSparseMultigraph<Circle, Line> newGraph1 = convertGraph(graph1, layout1);
         drawGraph(newGraph1, group1);
         
-//        for (Circle circle : newGraph1.getVertices()) {
-//            Text t = TextBuilder.create()
-//                    .text(circle.toString().substring(7))
-//                    .x(circle.getCenterX())
-//                    .y(circle.getCenterY() - (CIRCLE_SIZE + 5))
-//                    .fill(Color.BLUEVIOLET)
-//                    .font(Font.font("Verdana", 10))
-//                    .textAlignment(TextAlignment.CENTER)
-//                    .build();
-//            root.getChildren().add(t);
-//        }
-
-
-        // Visualizing graph 2
-        Graph<String, Number> graph2 = TestGraphs.getOneComponentGraph();
-        Layout<String, Number> layout2 = new SpringLayout<String, Number>(graph2);
-        VisualizationModel<String, Number> vm2 = new DefaultVisualizationModel<>(layout2, new Dimension(400, 400));
-        UndirectedSparseMultigraph<Circle, Line> newGraph2 = convertGraph(graph2, layout2);
-        drawGraph(newGraph2, group2);
-        
-        root.getChildren().addAll(group1, group2);
+        root.getChildren().addAll(group1);
         
         // Shift group 2 to the right by 1000px
         group2.translateXProperty().set(1000);
@@ -244,11 +224,6 @@ public class JavaFXApplication1 extends Application {
         hbox.getChildren().addAll(seperator, subLayoutWidth, subLayoutHeight, slider);
 
         root.getChildren().addAll(hbox, bullseye);
-        
-        // Uncomment these to enable the lens
-//        final StackPane lensLayout = applyViewfinder(root, 1100, 600, newGraph1);
-//        final Scene scene = new Scene(lensLayout);
-
 
         // Uncomment this to disable the lens
         Scene scene = new Scene(root, 1500, 600, Color.WHITE);

@@ -167,8 +167,8 @@ public class JavaFXApplication1 extends Application {
         });
 
         // Control for lens width and height
-        Image upIcon = new Image(getClass().getResourceAsStream("up.png"));
-        Image downIcon = new Image(getClass().getResourceAsStream("down.png"));
+        Image upIcon = new Image(getClass().getResourceAsStream("resources/up.png"));
+        Image downIcon = new Image(getClass().getResourceAsStream("resources/down.png"));
 
         final Text lensWidth = TextBuilder.create()
                 .text("Lens Width: ")
@@ -246,7 +246,7 @@ public class JavaFXApplication1 extends Application {
         });
 
         // Lens selection toggle button
-        Image selectionIcon = new Image(getClass().getResourceAsStream("select.png"));
+        Image selectionIcon = new Image(getClass().getResourceAsStream("resources/select.png"));
         final ToggleButton selectionTool = new ToggleButton("", new ImageView(selectionIcon));
         selectionTool.setPrefWidth(150);
         selectionTool.setTooltip(new Tooltip("Press Esc to deselect"));
@@ -444,7 +444,7 @@ public class JavaFXApplication1 extends Application {
 
                 if (t.getCode() == KeyCode.F) {
 
-                    //pane.setCursor(new ImageCursor(new Image(getClass().getResourceAsStream("move.png"))));
+                    //pane.setCursor(new ImageCursor(new Image(getClass().getResourceAsStream("resources/move.png"))));
 
                     selectionTool.setSelected(false);
 

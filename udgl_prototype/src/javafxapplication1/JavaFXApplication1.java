@@ -4,6 +4,7 @@
  */
 package javafxapplication1;
 
+import com.sun.deploy.uitoolkit.DragContext;
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.KKLayout;
@@ -29,6 +30,8 @@ import java.util.logging.Logger;
 import javafx.animation.FadeTransition;
 import javafx.animation.FillTransition;
 import javafx.application.Application;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -42,6 +45,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialogs;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
@@ -106,15 +110,14 @@ public class JavaFXApplication1 extends Application {
     Rectangle lensRect;
     Node stencil;
     int unit = 5;
-    
     Color selectedCol = Color.web("F06060");                // Color for node when selected
     Color defaultCol = Color.web("#5C4B51");                // Color for node as default 
-    
     Color selectionToolCol = Color.web("#21AA9A");          // Color for the selection tool (stroke)
     Color selectionToolColwO = Color.web("#21AA9A", 0.1);   // Color for the selection tool (fill)
-    
     Color lensFCol = Color.web("#8E3448");                  // Color for the target selection lens
     Color lensSCol = Color.web("#FF883E");                  // Color for the selection lens
+    private final BooleanProperty dragModeActiveProperty =
+            new SimpleBooleanProperty(this, "dragModeActive", true);
 
     public static void main(String[] args) {
         launch(args);
@@ -127,7 +130,7 @@ public class JavaFXApplication1 extends Application {
         final BorderPane root = new BorderPane();
 
         final Group group1 = new Group();
-        
+
         final Scene scene = new Scene(root, 1200, 800, Color.WHITE);
 
         // Vbox to contain the UI controls
@@ -254,6 +257,8 @@ public class JavaFXApplication1 extends Application {
             @Override
             public void changed(ObservableValue<? extends Boolean> ov, Boolean t, Boolean t1) {
                 if (!t) {
+                    
+//                    lensRect = null;
 
                     pane = new BorderPane();
 
@@ -281,7 +286,7 @@ public class JavaFXApplication1 extends Application {
                                 slider.setDisable(false);
 
                                 lensRect = null;
-                                
+
                                 backgroundFilter.setSelected(false);
 
                             }
@@ -295,7 +300,7 @@ public class JavaFXApplication1 extends Application {
 
                     root.getChildren().add(pane);
 
-                    
+
                 }
             }
         });
@@ -322,10 +327,44 @@ public class JavaFXApplication1 extends Application {
                     lensRect.setStroke(lensSCol);
                     lensRect.setStrokeWidth(3);
 
+                    for (Circle c : newGraph1.getVertices()) {
+                        if (lensRect.intersects(c.getLayoutBounds())) {
+                            c.setFill(selectedCol);
+                            PICKED.add(c);
+                        }
+                    }
+
                     // Control the size of the lens
 
                     lensWidth.setText("Lens Width: " + lensRect.getWidth());
                     lensHeight.setText("Lens Height: " + lensRect.getHeight());
+
+                    lensRect.setOnMouseEntered(new EventHandler<MouseEvent>() {
+                        @Override
+                        public void handle(MouseEvent t) {
+                            if (lensRect.opacityProperty().get() != 1) {
+                                FadeTransition ft = new FadeTransition(Duration.millis(3000), lensRect);
+                                ft.setFromValue(lensRect.getOpacity());
+                                ft.setToValue(1.0);
+                                ft.play();
+                                
+                                System.out.println(lensRect);
+                            }
+                        }
+                    });
+                    
+                    lensRect.setOnMouseExited(new EventHandler<MouseEvent>() {
+
+                        @Override
+                        public void handle(MouseEvent t) {
+                            if (lensRect.opacityProperty().get() != 0) {
+                                FadeTransition ft = new FadeTransition(Duration.millis(3000), lensRect);
+                                ft.setFromValue(lensRect.getOpacity());
+                                ft.setToValue(0.0);
+                                ft.play();
+                            }
+                        }
+                    });
 
                     lensWidthUp.setOnAction(new EventHandler<ActionEvent>() {
                         @Override
@@ -387,53 +426,99 @@ public class JavaFXApplication1 extends Application {
                         }
                     });
 
-                    lensRect.setOnMousePressed(new EventHandler<MouseEvent>() {
-                        @Override
-                        public void handle(MouseEvent t) {
-                            lensRect.setFill(Color.web("orange", 0.1));
-                        }
-                    });
-
-                    lensRect.setOnMouseDragged(new EventHandler<MouseEvent>() {
-                        @Override
-                        public void handle(MouseEvent t) {
-                            lensRect.setX(t.getX());
-                            lensRect.setY(t.getY());
-//                            stencil = cutStencil(mask, selectionRect);
-                        }
-                    });
-
-//                    selectionRect.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
+//                    final MakeDraggable md = new MakeDraggable();
+//                    
+//                    md.makeDraggable(lensRect);
+//
+//                    lensRect.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
 //                        @Override
-//                        public void changed(ObservableValue<? extends Bounds> observableValue, Bounds bounds, Bounds bounds2) {
-//                            stencil = cutStencil(mask, selectionRect);
+//                        public void changed(ObservableValue<? extends Bounds> ov, Bounds t, Bounds t1) {
+//                            System.out.println(md.getDeltaX());
+//                            System.out.println(md.getDeltaY());
+//                            
+//                            for (final Circle c : PICKED) {
+//                                c.setCenterX(c.getCenterX() + md.getDeltaX()/1000);
+//                                c.setCenterY(c.getCenterY() + md.getDeltaY()/1000);
+//                            }
 //                        }
 //                    });
 
+
+//                    
+//                    lensRect.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
+//                        @Override
+//                        public void changed(ObservableValue<? extends Bounds> ov, Bounds t, Bounds t1) {
+//                            System.out.println(new Delta().getX());
+//                        }
+//                    });
 
 
                     lensRect.setOnMouseReleased(new EventHandler<MouseEvent>() {
                         @Override
                         public void handle(MouseEvent t) {
                             lensRect.setFill(Color.web("Orange", 0));
-                            PICKED.clear();
-                            for (Circle c : newGraph1.getVertices()) {
-                                c.setFill(Color.BLACK);
-                                if (lensRect.intersects(c.getLayoutBounds())) {
-                                    c.setFill(selectedCol);
-                                    PICKED.add(c);
-                                }
-                            }
-                            System.out.println(PICKED);
+//                            PICKED.clear();
+//                            for (Circle c : newGraph1.getVertices()) {
+//                                c.setFill(defaultCol);
+//                                if (lensRect.intersects(c.getLayoutBounds())) {
+//                                    c.setFill(selectedCol);
+//                                    PICKED.add(c);
+//                                }
+//                            }
+//                            System.out.println(PICKED);
                         }
                     });
 
-                    for (Circle c : newGraph1.getVertices()) {
-                        if (lensRect.intersects(c.getLayoutBounds())) {
-                            c.setFill(selectedCol);
-                            PICKED.add(c);
+                    lensRect.setOnMousePressed(new EventHandler<MouseEvent>() {
+                        @Override
+                        public void handle(MouseEvent t) {
+                            lensRect.setFill(Color.web("orange", 0.1));
                         }
-                    }
+                    });
+                    
+                    
+                    // This section is what I've been working on
+                    //////////////////////////////////////////////////////////////////////////
+                    //////////////////////////////////////////////////////////////////////////
+                    lensRect.setOnMouseDragged(new EventHandler<MouseEvent>() {
+                        @Override
+                        public void handle(MouseEvent t) {
+                            ////                            lensRect.setX(t.getX());
+                            ////                            lensRect.setY(t.getY());
+                            Delta delta = new Delta();
+
+                            delta.x = t.getX();
+                            delta.y = t.getY();
+
+                            lensRect.setX(delta.x);
+                            lensRect.setY(delta.y);
+
+                            System.out.println("Delta X: " + delta.x);
+                            System.out.println("Delta Y: " + delta.y);
+
+                            for (Circle c : PICKED) {
+                                if (t.getX() >= c.getCenterX()) {
+                                    c.setCenterX(c.getCenterX() + delta.x / 100);
+                                }
+
+                                if (t.getX() <= c.getCenterX()) {
+                                    c.setCenterX(c.getCenterX() - delta.x / 100);
+                                }
+
+                                if (t.getY() >= c.getCenterY()) {
+                                    c.setCenterY(c.getCenterY() + delta.x / 100);
+                                }
+
+                                if (t.getY() <= c.getCenterY()) {
+                                    c.setCenterY(c.getCenterY() - delta.x / 100);
+                                }
+                            }
+                        }
+                    });
+                    //////////////////////////////////////////////////////////////////////////
+                    //////////////////////////////////////////////////////////////////////////
+                    //////////////////////////////////////////////////////////////////////////
+
 
                     pane.getChildren().clear();
                     pane.getChildren().addAll(lensRect);
@@ -625,7 +710,7 @@ public class JavaFXApplication1 extends Application {
                         fillT.play();
                     }
 
-                    PICKED.clear();
+//                    PICKED.clear();
 
                     FadeTransition ft = new FadeTransition(Duration.millis(3000), lensRect);
                     ft.setFromValue(1.0);
@@ -634,13 +719,13 @@ public class JavaFXApplication1 extends Application {
 
                     System.out.println(pane.getChildren().contains(lensRect));
 
-                    ft.setOnFinished(new EventHandler<ActionEvent>() {
-                        @Override
-                        public void handle(ActionEvent t) {
-                            pane.getChildren().remove(lensRect);
-                            System.out.println(pane.getChildren().contains(lensRect));
-                        }
-                    });
+//                    ft.setOnFinished(new EventHandler<ActionEvent>() {
+//                        @Override
+//                        public void handle(ActionEvent t) {
+//                            pane.getChildren().remove(lensRect);
+//                            System.out.println(pane.getChildren().contains(lensRect));
+//                        }
+//                    });
 
 
 
@@ -669,7 +754,12 @@ public class JavaFXApplication1 extends Application {
         });
 
 
+        Group group = new Group();
+        for (Circle c : PICKED) {
+            group.getChildren().add(c);
+        }
 
+//        makeDraggable(group);
 
 
         // Show the scene.
@@ -851,7 +941,7 @@ public class JavaFXApplication1 extends Application {
         });
 
         circle.setOnMouseReleased(new EventHandler<MouseEvent>() {
-            // Change it back to black when released.
+            // Change it back to default color when released.
             @Override
             public void handle(MouseEvent t) {
                 Circle c = (Circle) t.getSource();
@@ -872,7 +962,7 @@ public class JavaFXApplication1 extends Application {
     }
 
     public static void makeDraggable(final Node node) {
-        final JavaFXApplication1.Delta dragDelta = new JavaFXApplication1.Delta();
+        final Delta dragDelta = new Delta();
         node.setOnMousePressed(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
@@ -927,6 +1017,22 @@ public class JavaFXApplication1 extends Application {
     private static class Delta {
 
         double x, y;
+
+        public double getX() {
+            return x;
+        }
+
+        public void setX(double x) {
+            this.x = x;
+        }
+
+        public double getY() {
+            return y;
+        }
+
+        public void setY(double y) {
+            this.y = y;
+        }
     }
 
     private StackPane applyViewfinder(Node background, double width, double height, final UndirectedSparseMultigraph<Circle, Line> graph) {

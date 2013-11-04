@@ -1,7 +1,7 @@
 /*
  * Handling mouse events with event filters
  */
-package draggablepanelsexample;
+package javafxapplication1;
 
 import javafx.application.Application;
 import javafx.beans.binding.Bindings;

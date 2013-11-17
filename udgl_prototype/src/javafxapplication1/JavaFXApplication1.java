@@ -1154,17 +1154,20 @@ public class JavaFXApplication1 extends Application {
 				moveContext.setMouseAnchorY(event.getSceneY());
 				moveContext.setInitialTranslateX(node.getLayoutX());
 				moveContext.setInitialTranslateY(node.getLayoutY());
+				event.consume();
 			} else if (event.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
 				Node node = (Node) event.getSource();
 
 				lensLayoutX = node.getLayoutX();
 				lensLayoutY = node.getLayoutY();
 
-				useLensPos();
-
 				node.setLayoutX(moveContext.getDragDestX(event.getSceneX()));
 				node.setLayoutY(moveContext.getDragDestY(event.getSceneY()));
+				event.consume();
 
+			} else if (event.getEventType().equals(MouseEvent.MOUSE_RELEASED)) {
+				useLensPos();
+				event.consume();
 			}
 		}
 	};
@@ -1179,6 +1182,7 @@ public class JavaFXApplication1 extends Application {
 
 		moveableGroup.setOnMousePressed(groupMoveEventHandler);
 		moveableGroup.setOnMouseDragged(groupMoveEventHandler);
+		moveableGroup.setOnMouseReleased(groupMoveEventHandler);
 
 		for (Line l : newGraph.getEdges()) {
 
@@ -1235,7 +1239,7 @@ public class JavaFXApplication1 extends Application {
 	public void checkCollision(Rectangle lens, Group root) {
 		ObservableList<Node> children = root.getChildren();
 		for (Node n : children) {
-			Bounds result = root.localToParent(n.getLayoutBounds());
+			Bounds result = root.localToScene(n.getLayoutBounds());
 			if (lens.intersects(result)) {
 				if (n.getClass().getSimpleName().equalsIgnoreCase("Group")) {
 					checkCollision(lens, (Group) n);
@@ -1249,25 +1253,5 @@ public class JavaFXApplication1 extends Application {
 			}
 		}
 	}
-
-	// public void checkCollision(Rectangle lens, Group root) {
-	// ObservableList<Node> children = root.getChildren();
-	// for (Node n : children) {
-	// Bounds result = root.localToScene(n.getLayoutBounds());
-	// if (n.getClass().getSimpleName().equalsIgnoreCase("Group")) {
-	// checkCollision(lens, (Group) n);
-	//
-	// } else {
-	// if (n.getClass().getSimpleName().equalsIgnoreCase("Circle")) {
-	// if (lens.intersects(result)) {
-	// ((Circle) n).setFill(selectedCol);
-	// PICKED.add((Circle) n);
-	// }
-	//
-	// }
-	// }
-	//
-	// }
-	// }
 
 }

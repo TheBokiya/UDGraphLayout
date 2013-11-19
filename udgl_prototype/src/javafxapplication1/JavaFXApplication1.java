@@ -148,7 +148,7 @@ public class JavaFXApplication1 extends Application {
 
 	Group moveableGroup;
 
-	Group myGroup;
+	Group canvas;
 
 	ArrayList<Map<Rectangle, UndirectedSparseMultigraph<Circle, Line>>> hashMapArray = new ArrayList<>();
 
@@ -163,7 +163,7 @@ public class JavaFXApplication1 extends Application {
 
 		final BorderPane root = new BorderPane();
 
-		myGroup = new Group();
+		canvas = new Group();
 
 		final Scene scene = new Scene(root, 1200, 800, Color.WHITE);
 
@@ -174,7 +174,7 @@ public class JavaFXApplication1 extends Application {
 		vbox.setStyle("-fx-background-color: #736B68");
 
 		root.setRight(vbox);
-		root.setLeft(myGroup);
+		root.setLeft(new Group(canvas));
 		root.setMinWidth(Double.MIN_VALUE);
 		root.setMaxWidth(Double.MAX_VALUE);
 		root.setPrefWidth(1200);
@@ -185,7 +185,7 @@ public class JavaFXApplication1 extends Application {
 		Layout<String, Number> layout = new CircleLayout<String, Number>(graph);
 		final UndirectedSparseMultigraph<Circle, Line> newGraph = convertGraph(
 				graph, layout);
-		drawGraph(newGraph, myGroup);
+		drawGraph(newGraph, canvas);
 
 		// Help Button
 		Button helpBtn = new Button("HELP");
@@ -412,14 +412,16 @@ public class JavaFXApplication1 extends Application {
 							lensRect = (Rectangle) pane.getChildren().get(1);
 							drawSelectionLens(lensRect);
 
-							checkCollision(lensRect, myGroup);
+							checkCollision(lensRect, canvas);
 
 							// The program would use the lens as a location for
 							// the sublayout
 							// unless specified anything else by right-clicking
 							// on the canvas.
 
-							useLensPos();
+//							useLensPos();
+							System.err.println(posX);
+							System.err.println(posY);
 
 							// Control the size of the lens
 
@@ -522,14 +524,14 @@ public class JavaFXApplication1 extends Application {
 									});
 
 							// Move the selected nodes simultaneously
-							moveableGroup = moveGroup(newGraph);
+							moveableGroup = createMovableGroup(newGraph);
 
 							ArrayList<Line> internalEdges = getInternalEdges(newGraph);
 							for (Line l : internalEdges) {
 								moveableGroup.getChildren().add(l);
 							}
 
-							myGroup.getChildren().add(moveableGroup);
+							canvas.getChildren().add(moveableGroup);
 
 							System.out.println(moveableGroup.getChildren());
 
@@ -708,8 +710,8 @@ public class JavaFXApplication1 extends Application {
 						// Generate an undirected sparse multigraph with
 						// selected layout
 						genGraph = generateGraph(PICKED, newGraph, c,
-								new Dimension(sublayoutDimension,
-										sublayoutDimension));
+								new Dimension((int) lensRect.getWidth(),
+										(int) lensRect.getHeight()));
 
 					} catch (Exception ex) {
 						Logger.getLogger(JavaFXApplication1.class.getName())
@@ -721,8 +723,8 @@ public class JavaFXApplication1 extends Application {
 					// "duplication of children" error
 					for (Circle c : genGraph.getVertices()) {
 						for (Line l : genGraph.getEdges()) {
-							myGroup.getChildren().remove(l);
-							myGroup.getChildren().remove(c);
+							canvas.getChildren().remove(l);
+							canvas.getChildren().remove(c);
 						}
 					}
 
@@ -773,7 +775,7 @@ public class JavaFXApplication1 extends Application {
 		stage.setResizable(true);
 		stage.show();
 
-		// ScenicView.show(scene);
+		 ScenicView.show(scene);
 
 	}
 
@@ -1166,13 +1168,13 @@ public class JavaFXApplication1 extends Application {
 				event.consume();
 
 			} else if (event.getEventType().equals(MouseEvent.MOUSE_RELEASED)) {
-				useLensPos();
+//				useLensPos();
 				event.consume();
 			}
 		}
 	};
 
-	public Group moveGroup(UndirectedSparseMultigraph<Circle, Line> newGraph) {
+	public Group createMovableGroup(UndirectedSparseMultigraph<Circle, Line> newGraph) {
 		Group moveableGroup = new Group();
 		moveableGroup.getChildren().add(lensRect);
 
@@ -1183,6 +1185,14 @@ public class JavaFXApplication1 extends Application {
 		moveableGroup.setOnMousePressed(groupMoveEventHandler);
 		moveableGroup.setOnMouseDragged(groupMoveEventHandler);
 		moveableGroup.setOnMouseReleased(groupMoveEventHandler);
+		
+		Circle c = CircleBuilder.create()
+				.centerX(0)
+				.centerY(0)
+				.radius(100)
+				.build();
+		
+		moveableGroup.getChildren().add(c);
 
 		for (Line l : newGraph.getEdges()) {
 
@@ -1239,7 +1249,7 @@ public class JavaFXApplication1 extends Application {
 	public void checkCollision(Rectangle lens, Group root) {
 		ObservableList<Node> children = root.getChildren();
 		for (Node n : children) {
-			Bounds result = root.localToScene(n.getLayoutBounds());
+			Bounds result = root.localToScene(n.getBoundsInParent());
 			if (lens.intersects(result)) {
 				if (n.getClass().getSimpleName().equalsIgnoreCase("Group")) {
 					checkCollision(lens, (Group) n);

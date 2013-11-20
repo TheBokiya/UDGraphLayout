@@ -26,12 +26,18 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.javafx.experiments.scenicview.ScenicView;
+import com.sun.javafx.scene.web.skin.ColorPicker;
+import com.sun.webpane.platform.BackForwardList.Entry;
+
 import javafx.animation.FadeTransition;
 import javafx.animation.FillTransition;
 import javafx.application.Application;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
@@ -56,6 +62,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.CircleBuilder;
 import javafx.scene.shape.Line;
@@ -63,7 +70,6 @@ import javafx.scene.shape.LineBuilder;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.RectangleBuilder;
 import javafx.scene.shape.Shape;
@@ -96,11 +102,12 @@ public class JavaFXApplication1 extends Application {
 			0.15);
 	private static final Color MASK_TINT = Color.GREY
 			.deriveColor(0, 1, 1, 0.97);
-	private static double VIEWFINDER_WIDTH = 200;
-	private static double VIEWFINDER_HEIGHT = 200;
+
+	@SuppressWarnings("rawtypes")
 	private static Class[] layoutClasses = new Class[] { CircleLayout.class,
 			SpringLayout.class, FRLayout.class, KKLayout.class,
 			StaticLayout.class };
+
 	private double posX = 0;
 	private double posY = 0;
 	private int sublayoutDimension = 200;
@@ -113,7 +120,6 @@ public class JavaFXApplication1 extends Application {
 	Rectangle lensRect;
 	Node stencil;
 	int unit = 5;
-
 	Color selectedCol = Color.web("F06060"); // Color for node when selected
 	Color defaultCol = Color.web("#5C4B51"); // Color for node as default
 
@@ -122,10 +128,28 @@ public class JavaFXApplication1 extends Application {
 	Color selectionToolColwO = Color.web("#21AA9A", 0.1); // Color for the
 															// selection tool
 															// (fill)
-
 	Color lensFCol = Color.web("#8E3448"); // Color for the target selection
 											// lens
 	Color lensSCol = Color.web("#FF883E"); // Color for the selection lens
+	Group subGroup;
+	Pane subPane;
+
+	double mPx, mPy;
+
+	@SuppressWarnings("rawtypes")
+	Class selectedClass;
+
+	MoveContext moveContext = new MoveContext();
+
+	double lensLayoutX, lensLayoutY = 0;
+
+	Group moveableGroup;
+
+	Group canvas;
+
+	ArrayList<Map<Rectangle, UndirectedSparseMultigraph<Circle, Line>>> hashMapArray = new ArrayList<>();
+	private Text posText;
+	private Text bullseye;
 
 	public static void main(String[] args) {
 		launch(args);
@@ -136,8 +160,7 @@ public class JavaFXApplication1 extends Application {
 	public void start(final Stage stage) throws Exception {
 
 		final BorderPane root = new BorderPane();
-
-		final Group group1 = new Group();
+		canvas = new Group();
 
 		final Scene scene = new Scene(root, 1200, 800, Color.WHITE);
 
@@ -148,19 +171,20 @@ public class JavaFXApplication1 extends Application {
 		vbox.setStyle("-fx-background-color: #736B68");
 
 		root.setRight(vbox);
-		root.setLeft(group1);
+
+		root.setLeft(new Group(canvas));
 		root.setMinWidth(Double.MIN_VALUE);
 		root.setMaxWidth(Double.MAX_VALUE);
 		root.setPrefWidth(1200);
 		root.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
 		// Visualizing graph 1 using Jung
-		Graph<String, Number> graph1 = TestGraphs.getDemoGraph();
-		Layout<String, Number> layout1 = new CircleLayout<String, Number>(
-				graph1);
-		final UndirectedSparseMultigraph<Circle, Line> newGraph1 = convertGraph(
-				graph1, layout1);
-		drawGraph(newGraph1, group1);
+
+		Graph<String, Number> graph = TestGraphs.getDemoGraph();
+		Layout<String, Number> layout = new CircleLayout<String, Number>(graph);
+		final UndirectedSparseMultigraph<Circle, Line> newGraph = convertGraph(
+				graph, layout);
+		drawGraph(newGraph, canvas);
 
 		// Help Button
 		Button helpBtn = new Button("HELP");
@@ -214,7 +238,8 @@ public class JavaFXApplication1 extends Application {
 
 		final Slider slider = new Slider();
 		slider.setMin(10);
-		slider.setMax(500);
+
+		slider.setMax(1000);
 		slider.setValue(200);
 		slider.setShowTickLabels(true);
 		slider.setShowTickMarks(true);
@@ -227,6 +252,22 @@ public class JavaFXApplication1 extends Application {
 					Number t1) {
 				sublayoutDimension = t1.intValue();
 				subLayout.setText("SubLayout: " + sublayoutDimension);
+
+				@SuppressWarnings("unused")
+				UndirectedSparseMultigraph<Circle, Line> genGraph = null;
+
+				// Generate an undirected sparse multigraph with
+				// selected layout
+				try {
+					genGraph = generateGraph(PICKED, newGraph, selectedClass,
+							new Dimension(sublayoutDimension,
+									sublayoutDimension));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+				lensRect.setWidth(sublayoutDimension);
+				lensRect.setHeight(sublayoutDimension);
 			}
 		});
 
@@ -260,6 +301,27 @@ public class JavaFXApplication1 extends Application {
 					}
 				});
 
+		// Color picker to controlt the stroke color of the lens
+		final javafx.scene.control.ColorPicker colorPicker = new javafx.scene.control.ColorPicker();
+		colorPicker.setPrefWidth(150);
+		colorPicker.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				// TODO Auto-generated method stub
+				changeLensColor(lensRect, colorPicker.getValue());
+			}
+		});
+
+		// sublayout target position
+		posText = TextBuilder
+				.create()
+				.text("Pos X: " + Math.round(posX) + ", Pos Y: "
+						+ Math.round(posY)).font(Font.font("Verdana", 12))
+				.fill(Color.WHITE).build();
+
+		bullseye = TextBuilder.create().text("X").fill(Color.GREY).build();
+
 		// Lens selection toggle button
 		Image selectionIcon = new Image(getClass().getResourceAsStream(
 				"resources/select.png"));
@@ -286,7 +348,7 @@ public class JavaFXApplication1 extends Application {
 										public void handle(KeyEvent t) {
 											if (t.getCode() == KeyCode.ESCAPE) {
 												System.out
-														.println("D is pressed");
+														.println("ESC is pressed");
 
 												for (Circle c : PICKED) {
 													FillTransition ft = new FillTransition(
@@ -299,12 +361,19 @@ public class JavaFXApplication1 extends Application {
 												selectionTool
 														.setSelected(false);
 												pane.getChildren().clear();
+
+												// Remove eventhandlers from the
+												// scene to reset the scene.
 												scene.setOnMousePressed(null);
 												scene.setOnMouseDragged(null);
+
 												PICKED.clear();
 
 												slider.setDisable(false);
 
+												if (lensRect != null) {
+													lensRect.setOpacity(0);
+												}
 												lensRect = null;
 
 												backgroundFilter
@@ -334,20 +403,27 @@ public class JavaFXApplication1 extends Application {
 
 						if (t.getCode() == KeyCode.S) {
 
-							// pane.setCursor(new ImageCursor(new
-							// Image(getClass().getResourceAsStream("move.png"))));
 
 							selectionTool.setSelected(false);
 
+							// Release eventhandler
 							scene.setOnMouseDragged(null);
 							scene.setOnMousePressed(null);
 
 							lensRect = (Rectangle) pane.getChildren().get(1);
-							lensRect.setFill(LENS_TINT);
-							lensRect.setFill(Color.web("blue", 0));
-							lensRect.getStrokeDashArray().addAll(10d);
-							lensRect.setStroke(lensSCol);
-							lensRect.setStrokeWidth(3);
+
+							drawSelectionLens(lensRect);
+
+							checkCollision(lensRect, canvas);
+
+							// The program would use the lens as a location for
+							// the sublayout
+							// unless specified anything else by right-clicking
+							// on the canvas.
+
+							useLensPos();
+							System.err.println(posX);
+							System.err.println(posY);
 
 							// Control the size of the lens
 
@@ -355,6 +431,47 @@ public class JavaFXApplication1 extends Application {
 									+ lensRect.getWidth());
 							lensHeight.setText("Lens Height: "
 									+ lensRect.getHeight());
+
+							// lensRect.setOnMouseEntered(new
+							// EventHandler<MouseEvent>() {
+							// @Override
+							// public void handle(MouseEvent t) {
+							//
+							// if (!PICKED.isEmpty()) {
+							// for (Circle c : PICKED) {
+							// FillTransition ft = new FillTransition(
+							// Duration.millis(1000), c,
+							// defaultCol, selectedCol);
+							// ft.play();
+							// }
+							// }
+							//
+							// if (lensRect.opacityProperty().get() != 1) {
+							// fadeTransition(lensRect, 1000,
+							// lensRect.getOpacity(), 1.0);
+							// }
+							// }
+							// });
+
+							// lensRect.setOnMouseExited(new
+							// EventHandler<MouseEvent>() {
+							// @Override
+							// public void handle(MouseEvent t) {
+							// if (lensRect.opacityProperty().get() != 0) {
+							// fadeTransition(lensRect, 1000,
+							// lensRect.getOpacity(), 0.0);
+							// }
+							//
+							// if (!PICKED.isEmpty()) {
+							// for (Circle c : PICKED) {
+							// FillTransition ft = new FillTransition(
+							// Duration.millis(1000), c,
+							// selectedCol, defaultCol);
+							// ft.play();
+							// }
+							// }
+							// }
+							// });
 
 							lensWidthUp
 									.setOnAction(new EventHandler<ActionEvent>() {
@@ -365,14 +482,7 @@ public class JavaFXApplication1 extends Application {
 											lensWidth.setText("Lens Width: "
 													+ lensRect.getWidth());
 
-											for (Circle c : newGraph1
-													.getVertices()) {
-												if (lensRect.intersects(c
-														.getLayoutBounds())) {
-													c.setFill(selectedCol);
-													PICKED.add(c);
-												}
-											}
+											checkCollision(newGraph, lensRect);
 										}
 									});
 
@@ -385,14 +495,7 @@ public class JavaFXApplication1 extends Application {
 											lensWidth.setText("Lens Width: "
 													+ lensRect.getWidth());
 
-											for (Circle c : newGraph1
-													.getVertices()) {
-												if (lensRect.intersects(c
-														.getLayoutBounds())) {
-													c.setFill(selectedCol);
-													PICKED.add(c);
-												}
-											}
+											checkCollision(newGraph, lensRect);
 										}
 									});
 
@@ -405,14 +508,7 @@ public class JavaFXApplication1 extends Application {
 											lensHeight.setText("Lens Height: "
 													+ lensRect.getHeight());
 
-											for (Circle c : newGraph1
-													.getVertices()) {
-												if (lensRect.intersects(c
-														.getLayoutBounds())) {
-													c.setFill(selectedCol);
-													PICKED.add(c);
-												}
-											}
+											checkCollision(newGraph, lensRect);
 										}
 									});
 
@@ -425,95 +521,42 @@ public class JavaFXApplication1 extends Application {
 											lensHeight.setText("Lens Height: "
 													+ lensRect.getHeight());
 
-											for (Circle c : newGraph1
-													.getVertices()) {
-												if (lensRect.intersects(c
-														.getLayoutBounds())) {
-													c.setFill(selectedCol);
-													PICKED.add(c);
-												}
-											}
+
+											checkCollision(newGraph, lensRect);
 										}
 									});
 
-							lensRect.setOnMousePressed(new EventHandler<MouseEvent>() {
-								@Override
-								public void handle(MouseEvent t) {
-									lensRect.setFill(Color.web("orange", 0.1));
-								}
-							});
+							// Move the selected nodes simultaneously
+							moveableGroup = createMovableGroup(newGraph);
 
-							lensRect.setOnMouseDragged(new EventHandler<MouseEvent>() {
-								@Override
-								public void handle(MouseEvent t) {
-									lensRect.setX(t.getX());
-									lensRect.setY(t.getY());
-									// stencil = cutStencil(mask,
-									// selectionRect);
-								}
-							});
-
-							// selectionRect.boundsInParentProperty().addListener(new
-							// ChangeListener<Bounds>() {
-							// @Override
-							// public void changed(ObservableValue<? extends
-							// Bounds> observableValue, Bounds bounds, Bounds
-							// bounds2) {
-							// stencil = cutStencil(mask, selectionRect);
-							// }
-							// });
-
-							lensRect.setOnMouseReleased(new EventHandler<MouseEvent>() {
-								@Override
-								public void handle(MouseEvent t) {
-									lensRect.setFill(Color.web("Orange", 0));
-									PICKED.clear();
-									for (Circle c : newGraph1.getVertices()) {
-										c.setFill(Color.BLACK);
-										if (lensRect.intersects(c
-												.getLayoutBounds())) {
-											c.setFill(selectedCol);
-											PICKED.add(c);
-										}
-									}
-									System.out.println(PICKED);
-								}
-							});
-
-							for (Circle c : newGraph1.getVertices()) {
-								if (lensRect.intersects(c.getLayoutBounds())) {
-									c.setFill(selectedCol);
-									PICKED.add(c);
-								}
+							ArrayList<Line> internalEdges = getInternalEdges(newGraph);
+							for (Line l : internalEdges) {
+								moveableGroup.getChildren().add(l);
 							}
 
-							pane.getChildren().clear();
-							pane.getChildren().addAll(lensRect);
-							group1.getChildren().add(pane);
+							canvas.getChildren().add(moveableGroup);
+
+							System.out.println(moveableGroup.getChildren());
 
 						}
 
 						if (t.getCode() == KeyCode.F) {
 
-							// pane.setCursor(new ImageCursor(new
-							// Image(getClass().getResourceAsStream("resources/move.png"))));
-
 							selectionTool.setSelected(false);
 
+							// Release eventhandler
 							scene.setOnMouseDragged(null);
 							scene.setOnMousePressed(null);
-
-							lensRect = (Rectangle) pane.getChildren().get(1);
-							lensRect.setFill(LENS_TINT);
-							lensRect.setFill(Color.web("blue", 0));
-							lensRect.getStrokeDashArray().addAll(10d);
-							lensRect.setStroke(lensFCol);
-							lensRect.setStrokeWidth(3);
+							
+							if (pane.getChildren().get(1) != null) {
+								lensRect = (Rectangle) pane.getChildren().get(1);
+								drawTargetSelectionLens(lensRect);
+							}
+							
 
 							slider.setDisable(true);
 
-							posX = lensRect.getX() + lensRect.getWidth() / 2;
-							posY = lensRect.getY() + lensRect.getHeight() / 2;
+							useLensPos();
 
 							sublayoutDimension = (int) (lensRect.getWidth() / 1.5);
 
@@ -609,6 +652,8 @@ public class JavaFXApplication1 extends Application {
 			@Override
 			public void handle(ActionEvent t) {
 
+				lensRect = null;
+
 				for (Circle c : PICKED) {
 					FillTransition ft = new FillTransition(Duration
 							.millis(2000), c, selectedCol, defaultCol);
@@ -621,14 +666,6 @@ public class JavaFXApplication1 extends Application {
 			}
 		});
 
-		// sublayout target position
-		final Text posText = TextBuilder.create()
-				.text("Pos X: " + posX + ", Pos Y: " + posY)
-				.font(Font.font("Verdana", 12)).fill(Color.WHITE).build();
-
-		final Text bullseye = TextBuilder.create().text("X").fill(Color.BLUE)
-				.build();
-
 		// Use the mid position of the lens as a target position for the
 		// sublayout
 		Button useLensPos = new Button("Use Lens Position");
@@ -636,12 +673,8 @@ public class JavaFXApplication1 extends Application {
 		useLensPos.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent t) {
-				posX = lensRect.getX() + (lensRect.getWidth() / 2);
-				posY = lensRect.getY() + (lensRect.getHeight() / 2);
 
-				posText.setText("Pos X: " + posX + ", Pos Y: " + posY);
-				bullseye.setX(posX);
-				bullseye.setY(posY);
+				useLensPos();
 			}
 		});
 
@@ -655,8 +688,9 @@ public class JavaFXApplication1 extends Application {
 		Separator separator4 = new Separator(Orientation.HORIZONTAL);
 		separator4.setStyle("-fx-background-color: WHITE");
 
-		vbox.getChildren().addAll(helpBtn, selectionTool, useLensPos,
-				clearPickedBtn, separator1);
+
+		vbox.getChildren().addAll(helpBtn, selectionTool, colorPicker,
+				useLensPos, clearPickedBtn, separator1);
 
 		// Creates buttons for all the layouts in the layoutClasses array
 		for (final Class c : layoutClasses) {
@@ -665,14 +699,24 @@ public class JavaFXApplication1 extends Application {
 			button.setOnAction(new EventHandler<ActionEvent>() {
 				@Override
 				public void handle(ActionEvent t) {
+					selectedClass = c;
+
+					if (lensRect != null) {
+						lensRect.setWidth(sublayoutDimension);
+						lensRect.setHeight(sublayoutDimension);
+					}
+
 					UndirectedSparseMultigraph<Circle, Line> genGraph = null;
+
 					try {
+
+						subPane = new Pane();
 
 						// Generate an undirected sparse multigraph with
 						// selected layout
-						genGraph = generateGraph(PICKED, newGraph1, c,
-								new Dimension(sublayoutDimension,
-										sublayoutDimension));
+						genGraph = generateGraph(PICKED, newGraph, c,
+								new Dimension((int) lensRect.getWidth(),
+										(int) lensRect.getHeight()));
 
 					} catch (Exception ex) {
 						Logger.getLogger(JavaFXApplication1.class.getName())
@@ -684,39 +728,20 @@ public class JavaFXApplication1 extends Application {
 					// "duplication of children" error
 					for (Circle c : genGraph.getVertices()) {
 						for (Line l : genGraph.getEdges()) {
-							group1.getChildren().remove(l);
-							group1.getChildren().remove(c);
+							canvas.getChildren().remove(l);
+							canvas.getChildren().remove(c);
 						}
 					}
-					drawGraph(genGraph, group1);
+
+					drawGraph(genGraph, moveableGroup);
+					System.out.println(moveableGroup.getChildren());
 
 					for (Circle c : PICKED) {
-						FillTransition fillT = new FillTransition(Duration
-								.millis(2000), c, selectedCol, defaultCol);
-						fillT.play();
+						// FillTransition fillT = new FillTransition(Duration
+						// .millis(2000), c, selectedCol, defaultCol);
+						// fillT.play();
+						// moveableGroup.getChildren().add(c);
 					}
-
-					PICKED.clear();
-
-					FadeTransition ft = new FadeTransition(Duration
-							.millis(3000), lensRect);
-					ft.setFromValue(1.0);
-					ft.setToValue(0);
-					ft.play();
-
-					System.out.println(pane.getChildren().contains(lensRect));
-
-					ft.setOnFinished(new EventHandler<ActionEvent>() {
-						@Override
-						public void handle(ActionEvent t) {
-							pane.getChildren().remove(lensRect);
-							System.out.println(pane.getChildren().contains(
-									lensRect));
-						}
-					});
-
-					slider.setDisable(false);
-
 				}
 			});
 			vbox.getChildren().add(button);
@@ -728,20 +753,25 @@ public class JavaFXApplication1 extends Application {
 
 		root.getChildren().addAll(bullseye);
 
-		scene.addEventHandler(MouseEvent.MOUSE_CLICKED,
-				new EventHandler<MouseEvent>() {
-					@Override
-					public void handle(MouseEvent e) {
-						if (e.getButton() == MouseButton.SECONDARY) {
-							posX = e.getX();
-							posY = e.getY();
-							posText.setText("Pos X: " + posX + ", Pos Y: "
-									+ posY);
-							bullseye.setX(posX);
-							bullseye.setY(posY);
-						}
-					}
-				});
+//		scene.addEventHandler(MouseEvent.MOUSE_CLICKED,
+//				new EventHandler<MouseEvent>() {
+//					@Override
+//					public void handle(MouseEvent e) {
+//						if (e.getButton() == MouseButton.SECONDARY) {
+//							posX = e.getX() + (sublayoutDimension/2);
+//							posY = e.getY() + (sublayoutDimension/2);
+//							posText.setText("Pos X: " + posX + ", Pos Y: "
+//									+ posY);
+//							bullseye.setX(posX);
+//							bullseye.setY(posY);
+//						}
+//					}
+//				});
+
+		Group subGroup = new Group();
+		for (Circle c : PICKED) {
+			subGroup.getChildren().add(c);
+		}
 
 		// Show the scene.
 		stage.setTitle("Simple Graph");
@@ -749,6 +779,7 @@ public class JavaFXApplication1 extends Application {
 		stage.setResizable(true);
 		stage.show();
 
+		 ScenicView.show(scene);
 	}
 
 	EventHandler<MouseEvent> mouseSelection = new EventHandler<MouseEvent>() {
@@ -803,6 +834,7 @@ public class JavaFXApplication1 extends Application {
 		UndirectedSparseMultigraph<Circle, Line> undirectGraph = new UndirectedSparseMultigraph<>();
 
 		// Do the layout to get coords for the circles.
+
 		VisualizationModel<String, Number> vm1 = new DefaultVisualizationModel<>(
 				layout, new Dimension(400, 400));
 
@@ -847,8 +879,10 @@ public class JavaFXApplication1 extends Application {
 	// Generate a graph for the picked vertices
 	public UndirectedSparseMultigraph<Circle, Line> generateGraph(
 			ArrayList<Circle> picked,
-			UndirectedSparseMultigraph<Circle, Line> graph, Class layout,
-			Dimension dimension) throws Exception {
+
+			UndirectedSparseMultigraph<Circle, Line> graph,
+			@SuppressWarnings("rawtypes") Class layout, Dimension dimension)
+			throws Exception {
 
 		UndirectedSparseMultigraph<Circle, Line> subGraph = new UndirectedSparseMultigraph<>();
 
@@ -864,22 +898,31 @@ public class JavaFXApplication1 extends Application {
 			}
 		}
 
+		@SuppressWarnings("unchecked")
 		Layout<Circle, Line> subLayout = getLayoutFor(layout, subGraph);
+
+		@SuppressWarnings("unused")
 		BasicVisualizationServer<Circle, Line> vv = new BasicVisualizationServer<Circle, Line>(
 				subLayout, dimension);
+
 		Collection<Circle> vertices = subGraph.getVertices();
 
 		for (Circle c : vertices) {
-			c.setCenterX(subLayout.transform(c).getX() + posX - 90);
-			c.setCenterY(subLayout.transform(c).getY() + posY - 110);
+			c.setCenterX(subLayout.transform(c).getX() + posX
+					- sublayoutDimension / 2);
+			c.setCenterY(subLayout.transform(c).getY() + posY
+					- sublayoutDimension / 2);
 		}
 
 		return subGraph;
 	}
 
+
+	@SuppressWarnings("rawtypes")
 	private Layout getLayoutFor(Class layoutClass, Graph graph)
 			throws Exception {
 		Object[] args = new Object[] { graph };
+		@SuppressWarnings("unchecked")
 		Constructor constructor = layoutClass
 				.getConstructor(new Class[] { Graph.class });
 		return (Layout) constructor.newInstance(args);
@@ -887,11 +930,27 @@ public class JavaFXApplication1 extends Application {
 
 	public void drawGraph(Graph<Circle, Line> graph, Group group) {
 		for (Circle c : graph.getVertices()) {
-			group.getChildren().add(c);
+			if (!group.getChildren().contains(c)) {
+				group.getChildren().add(c);
+			}
+
 		}
 
 		for (Line l : graph.getEdges()) {
-			group.getChildren().add(l);
+			if (!group.getChildren().contains(l)) {
+				group.getChildren().add(l);
+			}
+
+		}
+	}
+
+	public void drawGraph(Graph<Circle, Line> graph, Pane pane) {
+		for (Circle c : graph.getVertices()) {
+			pane.getChildren().add(c);
+		}
+
+		for (Line l : graph.getEdges()) {
+			pane.getChildren().add(l);
 		}
 	}
 
@@ -924,7 +983,8 @@ public class JavaFXApplication1 extends Application {
 		});
 
 		circle.setOnMouseReleased(new EventHandler<MouseEvent>() {
-			// Change it back to black when released.
+
+			// Change it back to default color when released.
 			@Override
 			public void handle(MouseEvent t) {
 				Circle c = (Circle) t.getSource();
@@ -945,7 +1005,7 @@ public class JavaFXApplication1 extends Application {
 	}
 
 	public static void makeDraggable(final Node node) {
-		final JavaFXApplication1.Delta dragDelta = new JavaFXApplication1.Delta();
+		final Delta dragDelta = new Delta();
 		node.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent mouseEvent) {
@@ -1001,35 +1061,6 @@ public class JavaFXApplication1 extends Application {
 		double x, y;
 	}
 
-	private StackPane applyViewfinder(Node background, double width,
-			double height, final UndirectedSparseMultigraph<Circle, Line> graph) {
-
-		final Rectangle mask = new Rectangle(width, height);
-
-		final Rectangle viewfinder = new Rectangle(VIEWFINDER_WIDTH,
-				VIEWFINDER_HEIGHT, LENS_TINT);
-		makeDraggable(viewfinder);
-
-		final Pane viewpane = new Pane();
-		viewpane.getChildren().addAll(new Group(), viewfinder);
-
-		viewfinder.boundsInParentProperty().addListener(
-				new ChangeListener<Bounds>() {
-					@Override
-					public void changed(
-							ObservableValue<? extends Bounds> observableValue,
-							Bounds bounds, Bounds bounds2) {
-						applyStencil(cutStencil(mask, viewfinder), viewpane);
-					}
-				});
-
-		viewfinder.relocate(width / 2 - VIEWFINDER_WIDTH / 2, height / 2
-				- VIEWFINDER_HEIGHT / 2);
-		StackPane layout = new StackPane();
-		layout.getChildren().setAll(background, viewpane);
-		return layout;
-	}
-
 	private void applyStencil(Node stencil, Pane viewpane) {
 		viewpane.getChildren().set(0, stencil);
 	}
@@ -1038,5 +1069,196 @@ public class JavaFXApplication1 extends Application {
 		Shape stencil = Shape.subtract(mask, viewfinder);
 		stencil.setFill(MASK_TINT);
 		return stencil;
+	}
+
+	// Check if the nodes are in the lens and change the node's color
+	// appropriately
+	public void checkCollision(UndirectedSparseMultigraph<Circle, Line> graph,
+			Rectangle lens) {
+		PICKED.clear();
+		for (Circle c : graph.getVertices()) {
+
+			if (moveableGroup != null) {
+				Bounds result = moveableGroup.localToScene(c.getLayoutBounds());
+				if (lens.intersects(result)) {
+					c.setFill(selectedCol);
+					moveableGroup.sceneToLocal(c.getLayoutBounds());
+					PICKED.add(c);
+				} else {
+					c.setFill(defaultCol);
+				}
+			} else {
+				if (lens.intersects(c.getLayoutBounds())) {
+					c.setFill(selectedCol);
+					PICKED.add(c);
+				} else {
+					c.setFill(defaultCol);
+				}
+			}
+
+		}
+	}
+
+	// Method to fade out the shape
+	public void fadeTransition(Shape shape, int time, double startVal,
+			double endValue) {
+		FadeTransition ft = new FadeTransition(Duration.millis(time), shape);
+		ft.setFromValue(startVal);
+		ft.setToValue(endValue);
+		ft.play();
+	}
+
+	// Use the center point of the lens as a position for the sublayout
+	public void useLensPos() {
+		posX = lensRect.getX() + (lensRect.getWidth() / 2);
+		posY = lensRect.getY() + (lensRect.getHeight() / 2);
+
+		posText.setText("Pos X: " + Math.round(posX) + ", Pos Y: "
+				+ Math.round(posY));
+
+		bullseye.setX(posX + lensLayoutX);
+		bullseye.setY(posY + lensLayoutY);
+	}
+
+	// Draw a selection lens (orange lens)
+	// This lens select all the nodes within it
+	public void drawSelectionLens(Rectangle lens) {
+		lens.setFill(LENS_TINT);
+		lens.setFill(Color.web("blue", 0));
+		lens.getStrokeDashArray().addAll(10d);
+		lens.setStroke(lensSCol);
+		lens.setStrokeWidth(3);
+	}
+
+	// Draw a target selection lens (purple lens)
+	// This lens defines the location for the sublayout on the canvas
+	public void drawTargetSelectionLens(Rectangle lens) {
+		lens.setFill(LENS_TINT);
+		lens.setFill(Color.web("blue", 0));
+		lens.getStrokeDashArray().addAll(10d);
+		lens.setStroke(lensFCol);
+		lens.setStrokeWidth(3);
+	}
+
+	public void changeLensColor(Rectangle lens, Color color) {
+		lens.setFill(LENS_TINT);
+		lens.setFill(Color.web("blue", 0));
+		lens.getStrokeDashArray().addAll(10d);
+		lens.setStroke(color);
+		lens.setStrokeWidth(3);
+	}
+
+	public Paint getLensStroke(Rectangle lens) {
+		return lens.getStroke();
+	}
+
+	EventHandler<MouseEvent> groupMoveEventHandler = new EventHandler<MouseEvent>() {
+		@Override
+		public void handle(MouseEvent event) {
+			if (event.getEventType().equals(MouseEvent.MOUSE_PRESSED)) {
+				Node node = (Node) event.getSource();
+
+				moveContext.setMouseAnchorX(event.getSceneX());
+				moveContext.setMouseAnchorY(event.getSceneY());
+				moveContext.setInitialTranslateX(node.getLayoutX());
+				moveContext.setInitialTranslateY(node.getLayoutY());
+				event.consume();
+			} else if (event.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
+				Node node = (Node) event.getSource();
+
+				lensLayoutX = node.getLayoutX();
+				lensLayoutY = node.getLayoutY();
+
+				node.setLayoutX(moveContext.getDragDestX(event.getSceneX()));
+				node.setLayoutY(moveContext.getDragDestY(event.getSceneY()));
+				event.consume();
+
+			} else if (event.getEventType().equals(MouseEvent.MOUSE_RELEASED)) {
+				useLensPos();
+				event.consume();
+			}
+		}
+	};
+
+	public Group createMovableGroup(UndirectedSparseMultigraph<Circle, Line> newGraph) {
+		Group moveableGroup = new Group();
+		moveableGroup.getChildren().add(lensRect);
+
+		for (Circle c : PICKED) {
+			moveableGroup.getChildren().add(c);
+		}
+
+		moveableGroup.setOnMousePressed(groupMoveEventHandler);
+		moveableGroup.setOnMouseDragged(groupMoveEventHandler);
+		moveableGroup.setOnMouseReleased(groupMoveEventHandler);
+
+		for (Line l : newGraph.getEdges()) {
+
+			Pair<Circle> endpoints = newGraph.getEndpoints(l);
+			Circle start = endpoints.getFirst();
+			Circle end = endpoints.getSecond();
+
+			if (PICKED.contains(start) && PICKED.contains(end)) {
+				l.startXProperty().bind(start.centerXProperty());
+				l.startYProperty().bind(start.centerYProperty());
+				l.endXProperty().bind(end.centerXProperty());
+				l.endYProperty().bind(end.centerYProperty());
+			} else {
+				if (PICKED.contains(start)) {
+					l.startXProperty().bind(
+							start.centerXProperty().add(
+									moveableGroup.layoutXProperty()));
+					l.startYProperty().bind(
+							start.centerYProperty().add(
+									moveableGroup.layoutYProperty()));
+				}
+				if (PICKED.contains(end)) {
+					l.endXProperty().bind(
+							end.centerXProperty().add(
+									moveableGroup.layoutXProperty()));
+					l.endYProperty().bind(
+							end.centerYProperty().add(
+									moveableGroup.layoutYProperty()));
+				}
+			}
+
+		}
+
+		return moveableGroup;
+	}
+
+	public ArrayList<Line> getInternalEdges(
+			UndirectedSparseMultigraph<Circle, Line> newGraph) {
+		ArrayList<Line> result = new ArrayList<>();
+		for (Line l : newGraph.getEdges()) {
+
+			Pair<Circle> endpoints = newGraph.getEndpoints(l);
+			Circle start = endpoints.getFirst();
+			Circle end = endpoints.getSecond();
+
+			if (PICKED.contains(start) && PICKED.contains(end)) {
+				result.add(l);
+			}
+
+		}
+		return result;
+	}
+
+	public void checkCollision(Rectangle lens, Group root) {
+		ObservableList<Node> children = root.getChildren();
+		for (Node n : children) {
+			Bounds result = root.localToParent(n.getBoundsInParent());
+			if (lens.intersects(result)) {
+				if (n.getClass().getSimpleName().equalsIgnoreCase("Group")) {
+					checkCollision(lens, (Group) n);
+				} else {
+					if (n.getClass().getSimpleName().equalsIgnoreCase("Circle")) {
+						((Circle) n).setFill(selectedCol);
+						PICKED.add((Circle) n);
+						System.out.println("TEST");
+					}
+				}
+			}
+		}
 	}
 }

@@ -419,7 +419,7 @@ public class JavaFXApplication1 extends Application {
 							// unless specified anything else by right-clicking
 							// on the canvas.
 
-//							useLensPos();
+							useLensPos();
 							System.err.println(posX);
 							System.err.println(posY);
 
@@ -1168,7 +1168,7 @@ public class JavaFXApplication1 extends Application {
 				event.consume();
 
 			} else if (event.getEventType().equals(MouseEvent.MOUSE_RELEASED)) {
-//				useLensPos();
+				useLensPos();
 				event.consume();
 			}
 		}
@@ -1185,14 +1185,6 @@ public class JavaFXApplication1 extends Application {
 		moveableGroup.setOnMousePressed(groupMoveEventHandler);
 		moveableGroup.setOnMouseDragged(groupMoveEventHandler);
 		moveableGroup.setOnMouseReleased(groupMoveEventHandler);
-		
-		Circle c = CircleBuilder.create()
-				.centerX(0)
-				.centerY(0)
-				.radius(100)
-				.build();
-		
-		moveableGroup.getChildren().add(c);
 
 		for (Line l : newGraph.getEdges()) {
 
@@ -1249,7 +1241,7 @@ public class JavaFXApplication1 extends Application {
 	public void checkCollision(Rectangle lens, Group root) {
 		ObservableList<Node> children = root.getChildren();
 		for (Node n : children) {
-			Bounds result = root.localToScene(n.getBoundsInParent());
+			Bounds result = root.localToParent(n.getBoundsInParent());
 			if (lens.intersects(result)) {
 				if (n.getClass().getSimpleName().equalsIgnoreCase("Group")) {
 					checkCollision(lens, (Group) n);

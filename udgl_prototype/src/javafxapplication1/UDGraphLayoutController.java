@@ -13,7 +13,10 @@ import javafx.geometry.Bounds;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -44,7 +47,7 @@ public class UDGraphLayoutController {
 			StaticLayout.class };
 	private UndirectedSparseMultigraph<Circle, Line> graph;
 	private Scale scaleX, scaleY;
-	private Group selectedGroup;
+	private Pane selectedGroup;
 	private Color defaultNodeColor = Color.web("#5C4B51");
 	private Color selectedNodeColor = Color.web("F06060");
 
@@ -66,7 +69,16 @@ public class UDGraphLayoutController {
 		return layoutClasses;
 	}
 
+	public void handleKeyPressed(KeyEvent e) {
+		if (e.getCode() == KeyCode.ESCAPE) {
+			canvas.getChildren().remove(selectionRectangle);
+			resetSelection();
+		}
+	}
+
 	public void handleMousePressed(MouseEvent e) {
+		resetSelection();
+		
 		anchorX = e.getX();
 		anchorY = e.getY();
 		if (selectionRectangle == null) {
@@ -80,6 +92,7 @@ public class UDGraphLayoutController {
 
 		scaleX = new Scale(-1, 1, anchorX, anchorY);
 		scaleY = new Scale(1, -1, anchorX, anchorY);
+
 	}
 
 	public void handleMouseDragged(MouseEvent e) {
@@ -111,17 +124,17 @@ public class UDGraphLayoutController {
 		selectedNodes.clear();
 		checkCollision(selectionRectangle, canvas);
 
+
 		// System.out.println(selectedNodes);
 	}
 
 	public void handleMouseReleased(MouseEvent e) {
-		if (!selectedNodes.isEmpty()) {
+		if (!selectedNodes.isEmpty() && selectionRectangle != null) {
 			canvas.getChildren().removeAll(selectedNodes);
 			selectedGroup = createSelectionGroup(selectedNodes,
 					selectionRectangle, graph);
 			addInternalEdges(graph, selectedGroup);
 			canvas.getChildren().add(selectedGroup);
-
 		}
 	}
 
@@ -191,25 +204,25 @@ public class UDGraphLayoutController {
 		return (Layout) constructor.newInstance(args);
 	}
 
-	public Group createSelectionGroup(ArrayList<Circle> selection,
+	public Pane createSelectionGroup(ArrayList<Circle> selection,
 			Rectangle selectionRect,
 			UndirectedSparseMultigraph<Circle, Line> graph) {
 		// add selected nodes to the group
 		// add background
-		Group g = new Group();
+		Pane p = new Pane();
 		Rectangle bg = RectangleBuilder.create().x(selectionRect.getX())
 				.y(selectionRect.getY()).width(selectionRect.getWidth())
 				.height(selectionRect.getHeight()).fill(Color.TRANSPARENT)
 				.opacity(1).build();
 
-		g.getChildren().addAll(selection);
-		g.getChildren().add(bg);
+		p.getChildren().addAll(selection);
+		p.getChildren().add(bg);
 
 		// make the group draggable
 		GroupMoveHandler groupMoveEventHandler = new GroupMoveHandler();
-		g.setOnMousePressed(groupMoveEventHandler);
-		g.setOnMouseDragged(groupMoveEventHandler);
-		g.setOnMouseReleased(groupMoveEventHandler);
+		p.setOnMousePressed(groupMoveEventHandler);
+		p.setOnMouseDragged(groupMoveEventHandler);
+		p.setOnMouseReleased(groupMoveEventHandler);
 
 		for (Line l : graph.getEdges()) {
 
@@ -225,15 +238,15 @@ public class UDGraphLayoutController {
 			} else {
 				if (selectedNodes.contains(start)) {
 					l.startXProperty().bind(
-							start.centerXProperty().add(g.layoutXProperty()));
+							start.centerXProperty().add(p.layoutXProperty()));
 					l.startYProperty().bind(
-							start.centerYProperty().add(g.layoutYProperty()));
+							start.centerYProperty().add(p.layoutYProperty()));
 				}
 				if (selectedNodes.contains(end)) {
 					l.endXProperty().bind(
-							end.centerXProperty().add(g.layoutXProperty()));
+							end.centerXProperty().add(p.layoutXProperty()));
 					l.endYProperty().bind(
-							end.centerYProperty().add(g.layoutYProperty()));
+							end.centerYProperty().add(p.layoutYProperty()));
 				}
 			}
 
@@ -241,11 +254,11 @@ public class UDGraphLayoutController {
 
 		// System.out.println("Group: " + g.getChildren());
 
-		return g;
+		return p;
 	}
 
 	public void addInternalEdges(
-			UndirectedSparseMultigraph<Circle, Line> graph, Group selectedGroup) {
+			UndirectedSparseMultigraph<Circle, Line> graph, Pane selectedGroup) {
 		for (Line l : graph.getEdges()) {
 
 			Pair<Circle> endpoints = graph.getEndpoints(l);
@@ -278,17 +291,29 @@ public class UDGraphLayoutController {
 				} else {
 					if (n.getClass().getSimpleName().equalsIgnoreCase("Circle")) {
 						selectedNodes.add((Circle) n);
+						paintSelection((Circle) n);
 					}
+				}
+			} else {
+				if (n.getClass().getSimpleName().equalsIgnoreCase("Circle")) {
+					paintDefaultSelection((Circle) n);
 				}
 			}
 		}
 	}
 
 	public void resetSelection() {
-		for(Circle c: selectedNodes){
-			c.setFill(defaultNodeColor);
+		for (Circle c : selectedNodes ) {
+			paintDefaultSelection(c);
 		}
-		
 		selectedNodes.clear();
+	}
+
+	public void paintSelection(Circle c) {
+		c.setFill(selectedNodeColor);
+	}
+
+	public void paintDefaultSelection(Circle c) {
+		c.setFill(defaultNodeColor);
 	}
 }

@@ -76,11 +76,7 @@ public class UDGraphLayout extends Application {
 				new EventHandler<KeyEvent>() {
 					@Override
 					public void handle(KeyEvent event) {
-						if (event.getCode() == KeyCode.ESCAPE) {
-							canvas.getChildren().remove(
-									controller.getSelectionRectangle());
-							controller.resetSelection();
-						}
+						controller.handleKeyPressed(event);
 					}
 				});
 
@@ -109,7 +105,7 @@ public class UDGraphLayout extends Application {
 		stage.setScene(scene);
 		stage.show();
 
-		 ScenicView.show(canvas);
+//		 ScenicView.show(canvas);
 	}
 
 	public static void main(String[] args) {

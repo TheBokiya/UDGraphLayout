@@ -7,9 +7,12 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -78,7 +81,7 @@ public class UDGraphLayoutController {
 
 	public void handleMousePressed(MouseEvent e) {
 		resetSelection();
-		
+
 		anchorX = e.getX();
 		anchorY = e.getY();
 		if (selectionRectangle == null) {
@@ -123,7 +126,6 @@ public class UDGraphLayoutController {
 
 		selectedNodes.clear();
 		checkCollision(selectionRectangle, canvas);
-
 
 		// System.out.println(selectedNodes);
 	}
@@ -187,9 +189,11 @@ public class UDGraphLayoutController {
 
 		Collection<Circle> vertices = subGraph.getVertices();
 
+		System.out.println(selectedRect);
+		
 		for (Circle c : vertices) {
-			c.setCenterX(subLayout.transform(c).getX() + selectedRect.getX());
-			c.setCenterY(subLayout.transform(c).getY() + selectedRect.getY());
+			c.setCenterX(subLayout.transform(c).getX() - selectedRect.getWidth());
+			c.setCenterY(subLayout.transform(c).getY());
 		}
 
 		return subGraph;
@@ -207,16 +211,53 @@ public class UDGraphLayoutController {
 	public Pane createSelectionGroup(ArrayList<Circle> selection,
 			Rectangle selectionRect,
 			UndirectedSparseMultigraph<Circle, Line> graph) {
-		// add selected nodes to the group
-		// add background
-		Pane p = new Pane();
-		Rectangle bg = RectangleBuilder.create().x(selectionRect.getX())
-				.y(selectionRect.getY()).width(selectionRect.getWidth())
-				.height(selectionRect.getHeight()).fill(Color.TRANSPARENT)
-				.opacity(1).build();
 
+		// add a pane that resizes to fit it's children
+		Pane p = new Pane();
+		p.setLayoutX(selectionRect.getX());
+		p.setLayoutY(selectionRect.getY());
+		p.setOpacity(0.5);
+//		p.setStyle("-fx-background-color: lightgreen");
+		p.setMinSize(Pane.USE_COMPUTED_SIZE, Pane.USE_COMPUTED_SIZE); //selectionRect.getWidth(), selectionRect.getHeight());
+		p.setPrefSize(Pane.USE_COMPUTED_SIZE, Pane.USE_COMPUTED_SIZE);//selectionRect.getWidth(), selectionRect.getHeight());
+		p.setMaxSize(Pane.USE_COMPUTED_SIZE, Pane.USE_COMPUTED_SIZE);
+	
+		final Rectangle bg = RectangleBuilder.create()
+				.x(selectionRect.getX())
+				.y(selectionRect.getY())
+				.width(selectionRect.getWidth())
+				.height(selectionRect.getHeight())
+				.fill(Color.BLUEVIOLET)
+				.opacity(0.5)
+				.build();
+		canvas.getChildren().add(bg);
+		
+		p.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
+			@Override
+			public void changed(ObservableValue<? extends Bounds> observable,
+					Bounds oldValue, Bounds newValue) {
+				System.out.println("old: " + oldValue);
+				System.out.println("new: " + newValue);
+				
+				bg.setX(newValue.getMinX());
+				bg.setY(newValue.getMinY());
+				
+				bg.setWidth(newValue.getWidth() - Math.abs(newValue.getWidth() - oldValue.getWidth()));
+				bg.setHeight(newValue.getHeight());
+				
+				
+			}
+		});
+		
+		
+
+		for(Circle c : selection){
+			Point2D parentToLocal = p.parentToLocal(c.getCenterX(), c.getCenterY());
+			c.setCenterX(parentToLocal.getX());
+			c.setCenterY(parentToLocal.getY());
+		}
+		
 		p.getChildren().addAll(selection);
-		p.getChildren().add(bg);
 
 		// make the group draggable
 		GroupMoveHandler groupMoveEventHandler = new GroupMoveHandler();
@@ -251,9 +292,6 @@ public class UDGraphLayoutController {
 			}
 
 		}
-
-		// System.out.println("Group: " + g.getChildren());
-
 		return p;
 	}
 
@@ -303,7 +341,7 @@ public class UDGraphLayoutController {
 	}
 
 	public void resetSelection() {
-		for (Circle c : selectedNodes ) {
+		for (Circle c : selectedNodes) {
 			paintDefaultSelection(c);
 		}
 		selectedNodes.clear();

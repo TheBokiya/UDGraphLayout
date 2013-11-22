@@ -12,6 +12,8 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.CircleBuilder;
@@ -38,13 +40,6 @@ public class SimpleGroupRecursion<E> extends Application {
 
 		root = new Group();
 		
-		Circle circle = CircleBuilder.create()
-				.centerX(-50)
-				.centerY(-50)
-				.radius(100)
-				.build();
-		
-		root.getChildren().add(circle);
 
 		Circle c1 = drawCircle();
 		c1.setCenterX(200);
@@ -72,7 +67,10 @@ public class SimpleGroupRecursion<E> extends Application {
 		c1c2.endXProperty().bind(c2.centerXProperty());
 		c1c2.endYProperty().bind(c2.centerYProperty());
 
-		Group group1 = new Group();
+		Pane group1 = new Pane();
+		group1.setPrefSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+		group1.setMaxSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+		group1.setMinSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
 
 		Circle c3 = drawCircle();
 		c3.setCenterX(500);
@@ -134,7 +132,7 @@ public class SimpleGroupRecursion<E> extends Application {
 		lens.setOnMousePressed(rectangleMoveEventHandler);
 		lens.setOnMouseDragged(rectangleMoveEventHandler);
 
-		group2.getChildren().addAll(c4, t4, c5, t5, c6, t6, c4c5, c4c6, lens);
+		group2.getChildren().addAll(c4, t4, c5, t5, c6, t6, c4c5, c4c6);
 //		group2.translateYProperty().set(-200);
 
 		group1.getChildren().addAll(group2);

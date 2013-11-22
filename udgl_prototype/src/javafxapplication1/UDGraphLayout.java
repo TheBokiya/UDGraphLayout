@@ -15,6 +15,7 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -63,14 +64,14 @@ public class UDGraphLayout extends Application {
 			});
 			toolBar.getItems().add(btn);
 		}
-		
+
 		final Group canvas = new Group();
 		controller = new UDGraphLayoutController(newGraph, canvas);
 
 		drawGraph(newGraph, canvas);
 		container.getChildren().addAll(canvas);
 		System.out.println(container.getChildren());
-		
+
 		Scene scene = new Scene(container, 1200, 800, Color.WHITE);
 		scene.addEventFilter(KeyEvent.KEY_PRESSED,
 				new EventHandler<KeyEvent>() {
@@ -84,10 +85,10 @@ public class UDGraphLayout extends Application {
 			@Override
 			public void handle(MouseEvent event) {
 				controller.handleMousePressed(event);
-				
+
 			}
 		});
-		
+
 		scene.setOnMouseDragged(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
@@ -105,7 +106,7 @@ public class UDGraphLayout extends Application {
 		stage.setScene(scene);
 		stage.show();
 
-//		 ScenicView.show(canvas);
+//		 ScenicView.show(scene);
 	}
 
 	public static void main(String[] args) {

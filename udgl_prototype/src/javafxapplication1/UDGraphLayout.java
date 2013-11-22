@@ -102,21 +102,11 @@ public class UDGraphLayout extends Application {
 			}
 		});
 
-//		if (canvas.getChildren().contains(controller.getSelectedGroup())) {
-//			controller.getSelectedGroup().setOnMouseEntered(
-//					new EventHandler<MouseEvent>() {
-//						@Override
-//						public void handle(MouseEvent event) {
-//							controller.handleSelectionRectangleMouseOver(event);
-//						}
-//					});
-//		}
-
 		stage.setTitle("User Definable Graph Layout Demo");
 		stage.setScene(scene);
 		stage.show();
 
-		 ScenicView.show(scene);
+//		 ScenicView.show(scene);
 	}
 
 	public static void main(String[] args) {

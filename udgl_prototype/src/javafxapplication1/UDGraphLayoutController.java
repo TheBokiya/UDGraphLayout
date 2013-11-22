@@ -13,6 +13,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -153,16 +154,6 @@ public class UDGraphLayoutController {
 			});
 			addInternalEdges(graph, selectedGroup);
 			canvas.getChildren().add(selectedGroup);
-			selectedGroup.boundsInLocalProperty().addListener(new ChangeListener<Bounds>() {
-				@Override
-				public void changed(
-						ObservableValue<? extends Bounds> observable,
-						Bounds oldValue, Bounds newValue) {
-					( (Rectangle) selectedGroup.getChildren().get(0)).setWidth(newValue.getWidth());
-					( (Rectangle) selectedGroup.getChildren().get(0)).setHeight(newValue.getHeight());
-
-				}
-			});
 			canvas.getChildren().remove(selectionRectangle);
 		}
 	}
@@ -233,8 +224,8 @@ public class UDGraphLayoutController {
 		Collection<Circle> vertices = subGraph.getVertices();
 
 		for (Circle c : vertices) {
-			c.setCenterX(subLayout.transform(c).getX() + selectedRect.getX());
-			c.setCenterY(subLayout.transform(c).getY() + selectedRect.getY());
+			c.setCenterX(subLayout.transform(c).getX());
+			c.setCenterY(subLayout.transform(c).getY());
 		}
 
 		return subGraph;
@@ -271,6 +262,11 @@ public class UDGraphLayoutController {
 //			}
 //		});
 		
+		for (Circle c : selection) {
+			Point2D parentToLocal = g.parentToLocal(c.getCenterX(), c.getCenterY());
+			c.setCenterX(parentToLocal.getX());
+			c.setCenterY(parentToLocal.getY());
+		}
 		g.getChildren().addAll(selection);
 		
 

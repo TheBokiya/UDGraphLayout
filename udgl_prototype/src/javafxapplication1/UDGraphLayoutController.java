@@ -152,8 +152,8 @@ public class UDGraphLayoutController {
 					handleSelectionRectangleMouseExited(event);
 				}
 			});
-			addInternalEdges(graph, selectedGroup);
-			canvas.getChildren().add(selectedGroup);
+			canvas.getChildren().add(0, selectedGroup);
+//			canvas.getChildren().add(selectedGroup);
 			canvas.getChildren().remove(selectionRectangle);
 		}
 	}
@@ -248,14 +248,21 @@ public class UDGraphLayoutController {
 		// add selected nodes to the group
 		// add background
 		Group g = new Group();
+		Group graphNodes = new Group();
+		
 		final Rectangle bg = RectangleBuilder.create().x(selectionRect.getX())
 				.y(selectionRect.getY()).width(selectionRect.getWidth())
-				.height(selectionRect.getHeight()).fill(Color.YELLOW)
+				.height(selectionRect.getHeight()).fill(Color.GREY)
 				.opacity(1).build();
-
-		canvas.getChildren().add(bg);
 		
-		bg.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
+		g.getChildren().add(bg);
+		g.getChildren().add(graphNodes);
+		
+		
+
+		
+		
+		graphNodes.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
 			@Override
 			public void changed(ObservableValue<? extends Bounds> observable,
 					Bounds oldValue, Bounds newValue) {
@@ -265,7 +272,7 @@ public class UDGraphLayoutController {
 				bg.setX(newValue.getMinX());
 				bg.setY(newValue.getMinY());
 				
-				bg.setWidth(newValue.getWidth() - Math.abs(newValue.getWidth() - oldValue.getWidth()));
+				bg.setWidth(newValue.getWidth());
 				bg.setHeight(newValue.getHeight());
 				
 				
@@ -277,7 +284,9 @@ public class UDGraphLayoutController {
 			c.setCenterX(parentToLocal.getX());
 			c.setCenterY(parentToLocal.getY());
 		}
-		g.getChildren().addAll(selection);
+		graphNodes.getChildren().addAll(selection);
+		
+		addInternalEdges(graph, graphNodes);
 		
 
 		// make the group draggable

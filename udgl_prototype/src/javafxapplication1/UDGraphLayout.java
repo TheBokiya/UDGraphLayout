@@ -69,7 +69,7 @@ public class UDGraphLayout extends Application {
 		controller = new UDGraphLayoutController(newGraph, canvas);
 
 		drawGraph(newGraph, canvas);
-		container.getChildren().addAll(canvas);
+		container.getChildren().addAll(toolBar, canvas);
 		System.out.println(container.getChildren());
 
 		Scene scene = new Scene(container, 1200, 800, Color.WHITE);
@@ -106,7 +106,7 @@ public class UDGraphLayout extends Application {
 		stage.setScene(scene);
 		stage.show();
 
-//		 ScenicView.show(scene);
+		 ScenicView.show(scene);
 	}
 
 	public static void main(String[] args) {

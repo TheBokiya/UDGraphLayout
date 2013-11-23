@@ -56,6 +56,7 @@ public class UDGraphLayoutController {
 	private Color defaultNodeColor = Color.web("#5C4B51");
 	private Color selectedNodeColor = Color.web("F06060");
 	private Rectangle selectionBg;
+	private Selection selectionGroup;
 
 	public UDGraphLayoutController(
 			UndirectedSparseMultigraph<Circle, Line> graph, Group canvas) {
@@ -136,8 +137,9 @@ public class UDGraphLayoutController {
 	public void handleMouseReleased(MouseEvent e) {
 		if (!selectedNodes.isEmpty() && selectionRectangle != null) {
 			canvas.getChildren().removeAll(selectedNodes);
-			selectedGroup = createSelectionGroup(selectedNodes,
+			selectionGroup = createSelectionGroup(selectedNodes,
 					selectionRectangle, graph);
+			selectedGroup = selectionGroup.getRoot();
 
 			selectedGroup.setOnMouseEntered(new EventHandler<MouseEvent>() {
 				@Override
@@ -181,7 +183,25 @@ public class UDGraphLayoutController {
 		// generate the graph from the selection
 		try {
 			if (!selectedNodes.isEmpty()) {
-				generateGraph(selectedNodes, graph, c, selectionRectangle);
+				Point2D point = new Point2D(selectionGroup.getRoot().getLayoutX(), selectionGroup.getRoot().getLayoutY() );
+//				Point2D newPoint = selectionGroup.getRoot().localToParent(point);
+//				System.out.println("old: " + point);
+				generateLayoutFromSelection(selectedNodes, graph, c, selectionGroup.getBackground());
+				
+//				for(Circle circle: selectedNodes){
+//					Point2D sceneToLocal = selectionGroup.getGraphRoot().sceneToLocal(circle.getCenterX(), circle.getCenterY());
+//					circle.setCenterX(sceneToLocal.getX());
+//					circle.setCenterY(sceneToLocal.getY());
+//					
+//				}
+				
+//				selectionGroup.getRoot().relocate(point.getX(), point.getY());
+				selectionGroup.getRoot().setLayoutX((selectionGroup.getRoot().getLayoutX() - point.getX()));
+				selectionGroup.getRoot().setLayoutY((selectionGroup.getRoot().getLayoutY() - point.getY()));
+//				System.err.println("new: " + selectionGroup.getRoot().getLayoutX());
+//				System.err.println("new: " + selectionGroup.getRoot().getLayoutY());
+				
+				
 				canvas.getChildren().remove(selectionRectangle);
 			}
 
@@ -192,7 +212,7 @@ public class UDGraphLayoutController {
 	}
 
 	// Generate a graph for the picked vertices
-	public UndirectedSparseMultigraph<Circle, Line> generateGraph(
+	public UndirectedSparseMultigraph<Circle, Line> generateLayoutFromSelection(
 			ArrayList<Circle> picked,
 			UndirectedSparseMultigraph<Circle, Line> graph,
 			@SuppressWarnings("rawtypes") Class layout, Rectangle selectedRect)
@@ -222,8 +242,6 @@ public class UDGraphLayoutController {
 				subLayout, d);
 
 		Collection<Circle> vertices = subGraph.getVertices();
-
-		System.out.println(selectedRect);
 		
 		for (Circle c : vertices) {
 			c.setCenterX(subLayout.transform(c).getX());
@@ -242,7 +260,7 @@ public class UDGraphLayoutController {
 		return (Layout) constructor.newInstance(args);
 	}
 
-	public Group createSelectionGroup(ArrayList<Circle> selection,
+	public Selection createSelectionGroup(ArrayList<Circle> selectedNode,
 			Rectangle selectionRect,
 			UndirectedSparseMultigraph<Circle, Line> graph) {
 		// add selected nodes to the group
@@ -258,16 +276,10 @@ public class UDGraphLayoutController {
 		g.getChildren().add(bg);
 		g.getChildren().add(graphNodes);
 		
-		
-
-		
-		
 		graphNodes.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
 			@Override
 			public void changed(ObservableValue<? extends Bounds> observable,
 					Bounds oldValue, Bounds newValue) {
-				System.out.println("old: " + oldValue);
-				System.out.println("new: " + newValue);
 				
 				bg.setX(newValue.getMinX());
 				bg.setY(newValue.getMinY());
@@ -279,12 +291,20 @@ public class UDGraphLayoutController {
 			}
 		});
 		
-		for (Circle c : selection) {
+//		g.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
+//			@Override
+//			public void changed(ObservableValue<? extends Bounds> observable,
+//					Bounds oldValue, Bounds newValue) {
+//				System.out.println("g bound: "+newValue);
+//			}
+//		});
+		
+		for (Circle c : selectedNode) {
 			Point2D parentToLocal = g.parentToLocal(c.getCenterX(), c.getCenterY());
 			c.setCenterX(parentToLocal.getX());
 			c.setCenterY(parentToLocal.getY());
 		}
-		graphNodes.getChildren().addAll(selection);
+		graphNodes.getChildren().addAll(selectedNode);
 		
 		addInternalEdges(graph, graphNodes);
 		
@@ -324,7 +344,9 @@ public class UDGraphLayoutController {
 		}
 		// System.out.println("Group: " + g.getChildren());
 
-		return g;
+		Selection selection = new Selection(g, graphNodes, bg);
+
+		return selection;
 	}
 
 	public void addInternalEdges(

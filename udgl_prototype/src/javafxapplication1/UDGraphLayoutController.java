@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javafx.animation.FadeTransition;
+import javafx.animation.FillTransition;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
@@ -27,7 +29,9 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.RectangleBuilder;
+import javafx.scene.shape.Shape;
 import javafx.scene.transform.Scale;
+import javafx.util.Duration;
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import edu.uci.ics.jung.algorithms.layout.KKLayout;
@@ -155,7 +159,7 @@ public class UDGraphLayoutController {
 				}
 			});
 			canvas.getChildren().add(0, selectedGroup);
-//			canvas.getChildren().add(selectedGroup);
+			// canvas.getChildren().add(selectedGroup);
 			canvas.getChildren().remove(selectionRectangle);
 		}
 	}
@@ -229,7 +233,7 @@ public class UDGraphLayoutController {
 				subLayout, d);
 
 		Collection<Circle> vertices = subGraph.getVertices();
-		
+
 		for (Circle c : vertices) {
 			c.setCenterX(subLayout.transform(c).getX());
 			c.setCenterY(subLayout.transform(c).getY());
@@ -247,46 +251,69 @@ public class UDGraphLayoutController {
 		return (Layout) constructor.newInstance(args);
 	}
 
-	public Selection createSelectionGroup(ArrayList<Circle> selectedNode,
+	public Selection createSelectionGroup(final ArrayList<Circle> selectedNode,
 			Rectangle selectionRect,
 			UndirectedSparseMultigraph<Circle, Line> graph) {
 		// add selected nodes to the group
 		// add background
 		Group g = new Group();
-		Group graphNodes = new Group();
-		
+		final Group graphNodes = new Group();
+
 		final Rectangle bg = RectangleBuilder.create().x(selectionRect.getX())
 				.y(selectionRect.getY()).width(selectionRect.getWidth())
-				.height(selectionRect.getHeight()).fill(Color.GREY)
-				.opacity(1).build();
-		
+				.height(selectionRect.getHeight()).fill(selectionFillColor)
+				.stroke(selectionStrokeColor).opacity(1).build();
+
 		g.getChildren().add(bg);
 		g.getChildren().add(graphNodes);
-		
-		graphNodes.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
+
+		bg.setOnMouseEntered(new EventHandler<MouseEvent>() {
+
 			@Override
-			public void changed(ObservableValue<? extends Bounds> observable,
-					Bounds oldValue, Bounds newValue) {
-				
-				bg.setX(newValue.getMinX());
-				bg.setY(newValue.getMinY());
-				
-				bg.setWidth(newValue.getWidth());
-				bg.setHeight(newValue.getHeight());
-				
-				
+			public void handle(MouseEvent event) {
+				fadeTransition(bg, 500, bg.getOpacity(), 1);
+				for (Circle c : getNodes(graphNodes)) {
+					fillTransition(c, 500, (Color) c.getFill(), selectedNodeColor);
+				}
 			}
 		});
+
+		bg.setOnMouseExited(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				fadeTransition(bg, 500, bg.getOpacity(), 0);
+				for (Circle c : getNodes(graphNodes)) {
+					fillTransition(c, 500, (Color) c.getFill(), defaultNodeColor);
+				}
+			}
+		});
+
+		graphNodes.boundsInParentProperty().addListener(
+				new ChangeListener<Bounds>() {
+					@Override
+					public void changed(
+							ObservableValue<? extends Bounds> observable,
+							Bounds oldValue, Bounds newValue) {
+
+						bg.setX(newValue.getMinX());
+						bg.setY(newValue.getMinY());
+
+						bg.setWidth(newValue.getWidth());
+						bg.setHeight(newValue.getHeight());
+
+					}
+				});
 		
 		for (Circle c : selectedNode) {
-			Point2D parentToLocal = g.parentToLocal(c.getCenterX(), c.getCenterY());
+			Point2D parentToLocal = g.parentToLocal(c.getCenterX(),
+					c.getCenterY());
 			c.setCenterX(parentToLocal.getX());
 			c.setCenterY(parentToLocal.getY());
 		}
 		graphNodes.getChildren().addAll(selectedNode);
-		
+
 		addInternalEdges(graph, graphNodes);
-		
 
 		// make the group draggable
 		GroupMoveHandler groupMoveEventHandler = new GroupMoveHandler();
@@ -370,6 +397,38 @@ public class UDGraphLayoutController {
 				}
 			}
 		}
+	}
+
+	// Method to fade out the shape
+	public void fadeTransition(Shape shape, int time, double startOpacity,
+			double endOpacity) {
+		FadeTransition ft = new FadeTransition(Duration.millis(time), shape);
+		ft.setFromValue(startOpacity);
+		ft.setToValue(endOpacity);
+		ft.play();
+	}
+
+	// Method to animate the color of the nodes
+	public void fillTransition(Shape s, int time, Color initialColor, Color finalColor) {
+		FillTransition ft = new FillTransition(Duration.millis(time), s,
+				initialColor, finalColor);
+		ft.play();
+	}
+	
+	// Get all the circles in a group.
+	public ArrayList<Circle> getNodes (Group g) {
+		ArrayList<Circle> returnedArray = new ArrayList<>();
+		ObservableList<Node> children = g.getChildren();
+		for (Node n : children) {
+			if (n.getClass().getSimpleName().equalsIgnoreCase("Group")) {
+				getNodes((Group) n);
+			} else {
+				if (n.getClass().getSimpleName().equalsIgnoreCase("Circle")) {
+					returnedArray.add((Circle) n);
+				}
+			}
+		}
+		return returnedArray;
 	}
 
 	public void resetSelection() {

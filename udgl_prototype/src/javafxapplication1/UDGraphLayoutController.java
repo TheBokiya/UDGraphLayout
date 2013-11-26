@@ -18,12 +18,12 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -45,7 +45,7 @@ import edu.uci.ics.jung.visualization.BasicVisualizationServer;
 
 public class UDGraphLayoutController {
 
-	private Group canvas;
+	private Pane canvas;
 	private Rectangle selectionRectangle;
 	private double anchorX, anchorY;
 	private Color selectionStrokeColor = Color.web("#FF883E");
@@ -63,7 +63,7 @@ public class UDGraphLayoutController {
 	private Selection selectionGroup;
 
 	public UDGraphLayoutController(
-			UndirectedSparseMultigraph<Circle, Line> graph, Group canvas) {
+			UndirectedSparseMultigraph<Circle, Line> graph, Pane canvas) {
 		this.canvas = canvas;
 		anchorX = 0;
 		anchorY = 0;
@@ -187,34 +187,12 @@ public class UDGraphLayoutController {
 		// generate the graph from the selection
 		try {
 			if (!selectedNodes.isEmpty()) {
-				Point2D point = new Point2D(selectionGroup.getRoot()
-						.getLayoutX(), selectionGroup.getRoot().getLayoutY());
-				// Point2D newPoint =
-				// selectionGroup.getRoot().localToParent(point);
-				// System.out.println("old: " + point);
-				generateLayoutFromSelection(selectedNodes, graph, c,
-						selectionGroup.getBackground());
-
-				// for(Circle circle: selectedNodes){
-				// Point2D sceneToLocal =
-				// selectionGroup.getGraphRoot().sceneToLocal(circle.getCenterX(),
-				// circle.getCenterY());
-				// circle.setCenterX(sceneToLocal.getX());
-				// circle.setCenterY(sceneToLocal.getY());
-				//
-				// }
-
-				// selectionGroup.getRoot().relocate(point.getX(),
-				// point.getY());
-				selectionGroup.getRoot().setLayoutX(
-						(selectionGroup.getRoot().getLayoutX() - point.getX()));
-				selectionGroup.getRoot().setLayoutY(
-						(selectionGroup.getRoot().getLayoutY() - point.getY()));
-				// System.err.println("new: " +
-				// selectionGroup.getRoot().getLayoutX());
-				// System.err.println("new: " +
-				// selectionGroup.getRoot().getLayoutY());
-
+				Point2D point = new Point2D(selectionGroup.getRoot().getBoundsInParent().getMinX(), selectionGroup.getRoot().getBoundsInParent().getMinY() );
+				
+				generateLayoutFromSelection(selectedNodes, graph, c, selectionGroup.getBackground());
+				
+				selectionGroup.getRoot().relocate(point.getX(), point.getY());
+				
 				canvas.getChildren().remove(selectionRectangle);
 			}
 
@@ -327,15 +305,7 @@ public class UDGraphLayoutController {
 
 					}
 				});
-
-		// g.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
-		// @Override
-		// public void changed(ObservableValue<? extends Bounds> observable,
-		// Bounds oldValue, Bounds newValue) {
-		// System.out.println("g bound: "+newValue);
-		// }
-		// });
-
+		
 		for (Circle c : selectedNode) {
 			Point2D parentToLocal = g.parentToLocal(c.getCenterX(),
 					c.getCenterY());
@@ -379,7 +349,6 @@ public class UDGraphLayoutController {
 			}
 
 		}
-		// System.out.println("Group: " + g.getChildren());
 
 		Selection selection = new Selection(g, graphNodes, bg);
 
@@ -409,8 +378,8 @@ public class UDGraphLayoutController {
 		return selectionRectangle;
 	}
 
-	public void checkCollision(Rectangle rect, Group root) {
-		ObservableList<Node> children = root.getChildren();
+	public void checkCollision(Rectangle rect, Parent root) {
+		ObservableList<Node> children = root.getChildrenUnmodifiable();
 		for (Node n : children) {
 			Bounds result = root.localToScene(n.getBoundsInParent());
 			Bounds rectBounds = rect.getBoundsInParent();

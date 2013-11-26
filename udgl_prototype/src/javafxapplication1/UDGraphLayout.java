@@ -65,7 +65,7 @@ public class UDGraphLayout extends Application {
 			toolBar.getItems().add(btn);
 		}
 
-		final Group canvas = new Group();
+		final Pane canvas = new Pane();
 		controller = new UDGraphLayoutController(newGraph, canvas);
 
 		drawGraph(newGraph, canvas);
@@ -81,7 +81,7 @@ public class UDGraphLayout extends Application {
 					}
 				});
 
-		scene.setOnMousePressed(new EventHandler<MouseEvent>() {
+		canvas.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				controller.handleMousePressed(event);
@@ -89,16 +89,24 @@ public class UDGraphLayout extends Application {
 			}
 		});
 
-		scene.setOnMouseDragged(new EventHandler<MouseEvent>() {
+		canvas.setOnMouseDragged(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				controller.handleMouseDragged(event);
 			}
 		});
-		scene.setOnMouseReleased(new EventHandler<MouseEvent>() {
+		canvas.setOnMouseReleased(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				controller.handleMouseReleased(event);
+			}
+		});
+		
+		scene.setOnKeyTyped(new EventHandler<KeyEvent>() {
+			@Override
+			public void handle(KeyEvent event) {
+				System.out.println(event.getText());
+				
 			}
 		});
 
@@ -246,7 +254,7 @@ public class UDGraphLayout extends Application {
 	 * @param group
 	 *            to draw the graph in
 	 */
-	public void drawGraph(Graph<Circle, Line> graph, Group group) {
+	public void drawGraph(Graph<Circle, Line> graph, Pane group) {
 		for (Circle c : graph.getVertices()) {
 			if (!group.getChildren().contains(c)) {
 				group.getChildren().add(c);

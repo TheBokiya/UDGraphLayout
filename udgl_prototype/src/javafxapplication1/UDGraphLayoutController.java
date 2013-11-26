@@ -285,7 +285,8 @@ public class UDGraphLayoutController {
 				.y(selectionRect.getY()).width(selectionRect.getWidth())
 				.height(selectionRect.getHeight()).fill(selectionFillColor)
 				.stroke(selectionStrokeColor).opacity(1).build();
-
+		
+		
 		g.getChildren().add(bg);
 		g.getChildren().add(graphNodes);
 

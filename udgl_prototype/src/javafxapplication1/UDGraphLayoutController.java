@@ -16,10 +16,13 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
+import javafx.scene.Cursor;
 import javafx.scene.Group;
+import javafx.scene.ImageCursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -187,12 +190,15 @@ public class UDGraphLayoutController {
 		// generate the graph from the selection
 		try {
 			if (!selectedNodes.isEmpty()) {
-				Point2D point = new Point2D(selectionGroup.getRoot().getBoundsInParent().getMinX(), selectionGroup.getRoot().getBoundsInParent().getMinY() );
-				
-				generateLayoutFromSelection(selectedNodes, graph, c, selectionGroup.getBackground());
-				
+				Point2D point = new Point2D(selectionGroup.getRoot()
+						.getBoundsInParent().getMinX(), selectionGroup
+						.getRoot().getBoundsInParent().getMinY());
+
+				generateLayoutFromSelection(selectedNodes, graph, c,
+						selectionGroup.getBackground());
+
 				selectionGroup.getRoot().relocate(point.getX(), point.getY());
-				
+
 				canvas.getChildren().remove(selectionRectangle);
 			}
 
@@ -263,32 +269,9 @@ public class UDGraphLayoutController {
 				.y(selectionRect.getY()).width(selectionRect.getWidth())
 				.height(selectionRect.getHeight()).fill(selectionFillColor)
 				.stroke(selectionStrokeColor).opacity(1).build();
-		
-		
+
 		g.getChildren().add(bg);
 		g.getChildren().add(graphNodes);
-
-		bg.setOnMouseEntered(new EventHandler<MouseEvent>() {
-
-			@Override
-			public void handle(MouseEvent event) {
-				fadeTransition(bg, 500, bg.getOpacity(), 1);
-				for (Circle c : getNodes(graphNodes)) {
-					fillTransition(c, 500, (Color) c.getFill(), selectedNodeColor);
-				}
-			}
-		});
-
-		bg.setOnMouseExited(new EventHandler<MouseEvent>() {
-
-			@Override
-			public void handle(MouseEvent event) {
-				fadeTransition(bg, 500, bg.getOpacity(), 0);
-				for (Circle c : getNodes(graphNodes)) {
-					fillTransition(c, 500, (Color) c.getFill(), defaultNodeColor);
-				}
-			}
-		});
 
 		graphNodes.boundsInParentProperty().addListener(
 				new ChangeListener<Bounds>() {
@@ -305,7 +288,8 @@ public class UDGraphLayoutController {
 
 					}
 				});
-		
+
+
 		for (Circle c : selectedNode) {
 			Point2D parentToLocal = g.parentToLocal(c.getCenterX(),
 					c.getCenterY());
@@ -349,6 +333,40 @@ public class UDGraphLayoutController {
 			}
 
 		}
+		
+		final SelectionRectangle selectionRectangle = new SelectionRectangle(bg, graphNodes);
+		g.getChildren().addAll(selectionRectangle.getAnchors());
+
+		bg.setOnMouseEntered(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				fadeTransition(bg, 250, bg.getOpacity(), 1);
+				for (Circle c : getNodes(graphNodes)) {
+					fillTransition(c, 250, (Color) c.getFill(),
+							selectedNodeColor);
+				}
+				for (Rectangle r : selectionRectangle.getAnchors()) {
+					fadeTransition(r, 250, r.getOpacity(), 1);
+				}
+			}
+		});
+
+		bg.setOnMouseExited(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				fadeTransition(bg, 500, bg.getOpacity(), 0);
+				for (Circle c : getNodes(graphNodes)) {
+					fillTransition(c, 500, (Color) c.getFill(),
+							defaultNodeColor);
+				}
+				for (Rectangle r : selectionRectangle.getAnchors()) {
+					fadeTransition(r, 500, r.getOpacity(), 0);
+				}
+				event.consume();
+			}
+		});
 
 		Selection selection = new Selection(g, graphNodes, bg);
 
@@ -410,14 +428,15 @@ public class UDGraphLayoutController {
 	}
 
 	// Method to animate the color of the nodes
-	public void fillTransition(Shape s, int time, Color initialColor, Color finalColor) {
+	public void fillTransition(Shape s, int time, Color initialColor,
+			Color finalColor) {
 		FillTransition ft = new FillTransition(Duration.millis(time), s,
 				initialColor, finalColor);
 		ft.play();
 	}
-	
+
 	// Get all the circles in a group.
-	public ArrayList<Circle> getNodes (Group g) {
+	public ArrayList<Circle> getNodes(Group g) {
 		ArrayList<Circle> returnedArray = new ArrayList<>();
 		ObservableList<Node> children = g.getChildren();
 		for (Node n : children) {
@@ -431,7 +450,7 @@ public class UDGraphLayoutController {
 		}
 		return returnedArray;
 	}
-
+	
 	public void resetSelection() {
 		for (Circle c : selectedNodes) {
 			paintDefaultSelection(c);

@@ -1,11 +1,23 @@
 package javafxapplication1;
 
+import java.awt.Dimension;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.graph.Graph;
+import edu.uci.ics.jung.graph.UndirectedSparseMultigraph;
+import edu.uci.ics.jung.graph.util.Pair;
+import edu.uci.ics.jung.visualization.BasicVisualizationServer;
 
 import javafx.animation.FadeTransition;
 import javafx.animation.FillTransition;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
+import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.ImageCursor;
@@ -14,6 +26,7 @@ import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.RectangleBuilder;
 import javafx.scene.shape.Shape;
@@ -37,11 +50,20 @@ public class SelectionRectangle {
 			"resources/nw_se_corner.png"));
 	private Group graphNodes;
 	private Color selectedNodeColor = Color.web("F06060");
+	private double anchorX, anchorY;
+	private ArrayList<Circle> selectedNodes;
+	private Selection selectionGroup;
+	private UndirectedSparseMultigraph<Circle, Line> graph;
+	private Class c;
 
-	public SelectionRectangle(Rectangle rect, Group graphNodes) {
+	public SelectionRectangle(Rectangle rect, Group graphNodes, ArrayList<Circle> selectedNodes, Selection selectionGroup, UndirectedSparseMultigraph<Circle, Line> graph, Class c) {
 
 		this.rect = rect;
 		this.graphNodes = graphNodes;
+		this.selectedNodes = selectedNodes;
+		this.selectionGroup = selectionGroup;
+		this.graph = graph;
+		this.c = c;
 
 		l = RectangleBuilder.create().x(rect.getX() - anchorSize / 2)
 				.y(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2)
@@ -295,9 +317,11 @@ public class SelectionRectangle {
 		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 		//
 		bm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		
+		resize();
+
 		event.consume();
 	}
-	
 
 	// Top mid anchor eventhandler
 	public void handleTopMidAnchorMousePressed(MouseEvent event) {
@@ -320,6 +344,7 @@ public class SelectionRectangle {
 		tm.setY(rect.getY() - anchorSize / 2);
 		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 		l.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		resize();
 		event.consume();
 	}
 
@@ -502,7 +527,7 @@ public class SelectionRectangle {
 		arrayList.add(l);
 		return arrayList;
 	}
-	
+
 	public void animate() {
 		fadeTransition(rect, 250, rect.getOpacity(), 1);
 		for (Circle c : getNodes(graphNodes)) {
@@ -545,4 +570,75 @@ public class SelectionRectangle {
 		}
 		return returnedArray;
 	}
+
+	public void resize() {
+		// generate the graph from the selection
+		try {
+			if (!selectedNodes.isEmpty()) {
+
+				Point2D point = new Point2D(selectionGroup.getRoot()
+						.getBoundsInParent().getMinX(), selectionGroup
+						.getRoot().getBoundsInParent().getMinY());
+
+				generateLayoutFromSelection(selectedNodes, graph, c,
+						selectionGroup.getBackground());
+
+				selectionGroup.getRoot().relocate(point.getX(), point.getY());
+			}
+
+		} catch (Exception ex) {
+			Logger.getLogger(JavaFXApplication1.class.getName()).log(
+					Level.SEVERE, null, ex);
+		}
+	}
+	
+	// Generate a graph for the picked vertices
+		public UndirectedSparseMultigraph<Circle, Line> generateLayoutFromSelection(
+				ArrayList<Circle> picked,
+				UndirectedSparseMultigraph<Circle, Line> graph,
+				@SuppressWarnings("rawtypes") Class layout, Rectangle selectedRect)
+				throws Exception {
+
+			UndirectedSparseMultigraph<Circle, Line> subGraph = new UndirectedSparseMultigraph<>();
+
+			for (Circle c : picked) {
+				subGraph.addVertex(c);
+				Collection<Line> incidentEdges = graph.getIncidentEdges(c);
+				for (Line l : incidentEdges) {
+					Pair<Circle> endpoints = graph.getEndpoints(l);
+					if (picked.containsAll(endpoints)) {
+						subGraph.addEdge(l, endpoints.getFirst(),
+								endpoints.getSecond());
+					}
+				}
+			}
+
+			@SuppressWarnings("unchecked")
+			Layout<Circle, Line> subLayout = getLayoutFor(layout, subGraph);
+
+			int size = (int) Math.min(selectedRect.getWidth(),
+					selectedRect.getHeight());
+			Dimension d = new Dimension(size, size);
+			BasicVisualizationServer<Circle, Line> vv = new BasicVisualizationServer<Circle, Line>(
+					subLayout, d);
+
+			Collection<Circle> vertices = subGraph.getVertices();
+
+			for (Circle c : vertices) {
+				c.setCenterX(subLayout.transform(c).getX());
+				c.setCenterY(subLayout.transform(c).getY());
+			}
+
+			return subGraph;
+		}
+
+		private Layout getLayoutFor(Class layoutClass, Graph graph)
+				throws Exception {
+			Object[] args = new Object[] { graph };
+			@SuppressWarnings("unchecked")
+			Constructor constructor = layoutClass
+					.getConstructor(new Class[] { Graph.class });
+			return (Layout) constructor.newInstance(args);
+		}
+
 }

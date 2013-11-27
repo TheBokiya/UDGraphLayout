@@ -1,5 +1,7 @@
 package javafxapplication1;
 
+import java.util.ArrayList;
+
 import javafx.beans.property.StringProperty;
 import javafx.scene.Group;
 import javafx.scene.shape.Rectangle;
@@ -14,6 +16,8 @@ public class Selection {
 		this.graphRoot = graphRoot;
 		this.background = background;
 	}
+
+
 
 	public Group getRoot() {
 		return root;

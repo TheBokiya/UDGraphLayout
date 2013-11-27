@@ -24,6 +24,7 @@ import javafx.scene.ImageCursor;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -50,13 +51,12 @@ public class SelectionRectangle {
 			"resources/nw_se_corner.png"));
 	private Group graphNodes;
 	private Color selectedNodeColor = Color.web("F06060");
-	private double anchorX, anchorY;
 	private ArrayList<Circle> selectedNodes;
 	private Selection selectionGroup;
 	private UndirectedSparseMultigraph<Circle, Line> graph;
 	private Class c;
 
-	public SelectionRectangle(Rectangle rect, Group graphNodes, ArrayList<Circle> selectedNodes, Selection selectionGroup, UndirectedSparseMultigraph<Circle, Line> graph, Class c) {
+	public SelectionRectangle(Rectangle rect, Group graphNodes, ArrayList<Circle> selectedNodes, Selection selectionGroup, UndirectedSparseMultigraph<Circle, Line> graph, Class c, Pane canvas) {
 
 		this.rect = rect;
 		this.graphNodes = graphNodes;
@@ -64,6 +64,7 @@ public class SelectionRectangle {
 		this.selectionGroup = selectionGroup;
 		this.graph = graph;
 		this.c = c;
+
 
 		l = RectangleBuilder.create().x(rect.getX() - anchorSize / 2)
 				.y(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2)
@@ -378,6 +379,8 @@ public class SelectionRectangle {
 		l.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 
 		bm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		
+		resize();
 		event.consume();
 	}
 
@@ -401,6 +404,7 @@ public class SelectionRectangle {
 		r.setX(rect.getX() + rect.getWidth() - anchorSize / 2);
 		tm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
 		bm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		resize();
 		event.consume();
 	}
 
@@ -434,6 +438,7 @@ public class SelectionRectangle {
 
 		r.setX(rect.getX() + rect.getWidth() - anchorSize / 2);
 		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		resize();
 		event.consume();
 	}
 
@@ -457,6 +462,7 @@ public class SelectionRectangle {
 		bm.setY(rect.getY() + rect.getHeight() - anchorSize / 2);
 		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 		l.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		resize();
 		event.consume();
 	}
 
@@ -489,6 +495,7 @@ public class SelectionRectangle {
 		l.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 
 		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		resize();
 		event.consume();
 	}
 
@@ -512,6 +519,7 @@ public class SelectionRectangle {
 		l.setX(rect.getX() - anchorSize / 2);
 		tm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
 		bm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		resize();
 		event.consume();
 	}
 
@@ -575,15 +583,19 @@ public class SelectionRectangle {
 		// generate the graph from the selection
 		try {
 			if (!selectedNodes.isEmpty()) {
+				if (c != null) {
+					Point2D point = new Point2D(selectionGroup.getRoot()
+							.getBoundsInParent().getMinX(), selectionGroup
+							.getRoot().getBoundsInParent().getMinY());
 
-				Point2D point = new Point2D(selectionGroup.getRoot()
-						.getBoundsInParent().getMinX(), selectionGroup
-						.getRoot().getBoundsInParent().getMinY());
+					generateLayoutFromSelection(selectedNodes, graph, c,
+							selectionGroup.getBackground());
+					
 
-				generateLayoutFromSelection(selectedNodes, graph, c,
-						selectionGroup.getBackground());
-
-				selectionGroup.getRoot().relocate(point.getX(), point.getY());
+					selectionGroup.getRoot().relocate(point.getX(), point.getY());
+					selectionGroup.getBackground().setWidth(r.getX() - l.getWidth());
+					selectionGroup.getBackground().setHeight(bm.getY() - tm.getY());
+				}
 			}
 
 		} catch (Exception ex) {
@@ -619,7 +631,7 @@ public class SelectionRectangle {
 			int size = (int) Math.min(selectedRect.getWidth(),
 					selectedRect.getHeight());
 			Dimension d = new Dimension(size, size);
-			BasicVisualizationServer<Circle, Line> vv = new BasicVisualizationServer<Circle, Line>(
+			new BasicVisualizationServer<Circle, Line>(
 					subLayout, d);
 
 			Collection<Circle> vertices = subGraph.getVertices();

@@ -68,6 +68,7 @@ public class UDGraphLayoutController {
 	private Group graphNodes;
 	private Group g;
 	private Class c;
+	private Rectangle bg;
 
 	public UDGraphLayoutController(
 			UndirectedSparseMultigraph<Circle, Line> graph, Pane canvas) {
@@ -202,11 +203,9 @@ public class UDGraphLayoutController {
 				generateLayoutFromSelection(selectedNodes, graph, c,
 						selectionGroup.getBackground());
 
-				
-
 				g.getChildren().removeAll(selectionAnchors.getAnchors());
 				selectionAnchors = new SelectionRectangle(
-						selectionGroup.getBackground(), graphNodes, selectedNodes, selectionGroup, graph, c);
+						selectionGroup.getBackground(), graphNodes, selectedNodes, selectionGroup, graph, c, canvas);
 				
 				selectionGroup.getRoot().relocate(point.getX(), point.getY());
 				g.getChildren().addAll(selectionAnchors.getAnchors());
@@ -274,7 +273,7 @@ public class UDGraphLayoutController {
 		g = new Group();
 		graphNodes = new Group();
 
-		final Rectangle bg = RectangleBuilder.create().x(selectionRect.getX())
+		bg = RectangleBuilder.create().x(selectionRect.getX())
 				.y(selectionRect.getY()).width(selectionRect.getWidth())
 				.height(selectionRect.getHeight()).fill(selectionFillColor)
 				.stroke(selectionStrokeColor).opacity(1).build();
@@ -342,7 +341,7 @@ public class UDGraphLayoutController {
 
 		}
 
-		selectionAnchors = new SelectionRectangle(bg, graphNodes, selectedNode, selectionGroup, graph, c);
+		selectionAnchors = new SelectionRectangle(bg, graphNodes, selectedNode, selectionGroup, graph, c, canvas);
 		g.getChildren().addAll(selectionAnchors.getAnchors());
 
 		bg.setOnMouseEntered(new EventHandler<MouseEvent>() {

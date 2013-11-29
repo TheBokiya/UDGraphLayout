@@ -51,9 +51,9 @@ public class UDGraphLayoutController {
 	private Color selectionStrokeColor = Color.web("#FF883E");
 	private Color selectionFillColor = Color.web("#FF883E", 0.1);
 	private ArrayList<Circle> selectedNodes = new ArrayList<>();
-	private static final Class[] layoutClasses = new Class[] { CircleLayout.class,
-			SpringLayout.class, FRLayout.class, KKLayout.class,
-			StaticLayout.class };
+	private static final Class[] layoutClasses = new Class[] {
+			CircleLayout.class, SpringLayout.class, FRLayout.class,
+			KKLayout.class, StaticLayout.class };
 	private UndirectedSparseMultigraph<Circle, Line> graph;
 	private Scale scaleX, scaleY;
 	private Group selectedGroup;
@@ -78,6 +78,7 @@ public class UDGraphLayoutController {
 
 	/**
 	 * Get the list of selected circles
+	 * 
 	 * @return
 	 */
 	public ArrayList<Circle> getSelectedNodes() {
@@ -86,6 +87,7 @@ public class UDGraphLayoutController {
 
 	/**
 	 * Get the list of layout classes
+	 * 
 	 * @return
 	 */
 	public static Class[] getLayoutClasses() {
@@ -94,7 +96,9 @@ public class UDGraphLayoutController {
 
 	/**
 	 * Handle a KEY_PRESSED event.
-	 * @param e the {@code KeyEvent} to be handled
+	 * 
+	 * @param e
+	 *            the {@code KeyEvent} to be handled
 	 */
 	public void handleKeyPressed(KeyEvent e) {
 		// Clear the selection of ESC is pressed.
@@ -155,34 +159,38 @@ public class UDGraphLayoutController {
 
 	public void handleMouseReleased(MouseEvent e) {
 		if (!selectedNodes.isEmpty() && selectionRectangle != null) {
-			
+
 			// create the selection group
 			selectionGroup = createSelectionGroup(selectedNodes,
 					selectionRectangle, graph);
-			
+
 			// attach the group to the canvas
 			selectedGroup = selectionGroup.getRoot();
 			canvas.getChildren().add(0, selectedGroup);
-			
+
 			// save the position of the group in parent
-			Point2D point = new Point2D(selectedGroup.getBoundsInParent().getMinX(),
-			selectedGroup.getBoundsInParent().getMinY());
-						
+			Point2D point = new Point2D(selectedGroup.getBoundsInParent()
+					.getMinX(), selectedGroup.getBoundsInParent().getMinY());
+
 			// correct the circles' position
 			selectionGroup.correctCirclePositions();
-			
+
 			// correct the position of the group
 			selectedGroup.setLayoutX(point.getX());
 			selectedGroup.setLayoutY(point.getY());
-			
-			System.out.println("LayoutX/Y after creation:" + selectedGroup.getLayoutX() + ", " + selectedGroup.getLayoutY());
+
+			System.out.println("LayoutX/Y after creation:"
+					+ selectedGroup.getLayoutX() + ", "
+					+ selectedGroup.getLayoutY());
 			canvas.getChildren().remove(selectionRectangle);
 		}
 	}
 
 	/**
 	 * Handle layout button action
-	 * @param e ActionEvent to handle
+	 * 
+	 * @param e
+	 *            ActionEvent to handle
 	 */
 	public void handleLayoutButtonAction(ActionEvent e) {
 		Button b = (Button) e.getSource();
@@ -199,13 +207,8 @@ public class UDGraphLayoutController {
 				generateLayoutFromSelection(selectedNodes, graph, c,
 						selectionGroup.getBackground());
 
-				g.getChildren().removeAll(selectionAnchors.getAnchors());
-				selectionAnchors = new SelectionRectangle(
-						selectionGroup.getBackground(), graphNodes, selectedNodes, selectionGroup, graph, c, canvas);
-				
 				selectionGroup.getRoot().relocate(point.getX(), point.getY());
-				g.getChildren().addAll(selectionAnchors.getAnchors());
-				
+
 				canvas.getChildren().remove(selectionRectangle);
 			}
 
@@ -217,10 +220,15 @@ public class UDGraphLayoutController {
 
 	/**
 	 * Generate the layout for a group of selected nodes
-	 * @param picked nodes
-	 * @param graph to create the subgraph of selected nodes to layout
-	 * @param layout type to use use
-	 * @param selectedRect to use as layout dimension
+	 * 
+	 * @param picked
+	 *            nodes
+	 * @param graph
+	 *            to create the subgraph of selected nodes to layout
+	 * @param layout
+	 *            type to use use
+	 * @param selectedRect
+	 *            to use as layout dimension
 	 * @return
 	 * @throws Exception
 	 */
@@ -264,8 +272,11 @@ public class UDGraphLayoutController {
 
 	/**
 	 * Instantiate the given layout
-	 * @param layoutClass to instantiate
-	 * @param graph to pass into the layout constructor
+	 * 
+	 * @param layoutClass
+	 *            to instantiate
+	 * @param graph
+	 *            to pass into the layout constructor
 	 * @return the layout
 	 * @throws Exception
 	 */
@@ -280,16 +291,16 @@ public class UDGraphLayoutController {
 
 	public Selection createSelectionGroup(final ArrayList<Circle> selectedNode,
 			Rectangle selectionRect,
-			UndirectedSparseMultigraph<Circle, Line> graph) {
+			final UndirectedSparseMultigraph<Circle, Line> graph) {
 		// Create a group to hold the selection and background
-		Group g = new Group();
-		
+		final Group g = new Group();
+
 		// create group for the graph nodes
 		final Group graphNodes = new Group();
 
 		// draw a background for the selection
-		final Rectangle bg = RectangleBuilder.create().x(0)
-				.y(0).width(selectionRect.getWidth())
+		final Rectangle bg = RectangleBuilder.create().x(0).y(0)
+				.width(selectionRect.getWidth())
 				.height(selectionRect.getHeight()).fill(selectionFillColor)
 				.stroke(selectionStrokeColor).opacity(1).build();
 
@@ -304,7 +315,8 @@ public class UDGraphLayoutController {
 			public void handle(MouseEvent event) {
 				fadeTransition(bg, 250, bg.getOpacity(), 1);
 				for (Circle c : getNodes(graphNodes)) {
-					fillTransition(c, 250, (Color) c.getFill(), selectedNodeColor);
+					fillTransition(c, 250, (Color) c.getFill(),
+							selectedNodeColor);
 				}
 			}
 		});
@@ -315,7 +327,8 @@ public class UDGraphLayoutController {
 			public void handle(MouseEvent event) {
 				fadeTransition(bg, 500, bg.getOpacity(), 0);
 				for (Circle c : getNodes(graphNodes)) {
-					fillTransition(c, 500, (Color) c.getFill(), defaultNodeColor);
+					fillTransition(c, 500, (Color) c.getFill(),
+							defaultNodeColor);
 				}
 			}
 		});
@@ -334,10 +347,26 @@ public class UDGraphLayoutController {
 						bg.setWidth(newValue.getWidth());
 						bg.setHeight(newValue.getHeight());
 
+						// Remove old anchor points if they exist
+						if (selectionAnchors != null) {
+							if (g.getChildren().containsAll(
+									selectionAnchors.getAnchors())) {
+								g.getChildren().removeAll(
+										selectionAnchors.getAnchors());
+							}
+						}
+						
+						// Create new anchor points and add to the group
+						selectionAnchors = new SelectionRectangle(bg,
+								graphNodes, selectedNode, selectionGroup,
+								graph, c, canvas);
+						g.getChildren().addAll(selectionAnchors.getAnchors());
+
 					}
 				});
-		
-		// Convert the points from the canvas coordinate system to the group coords
+
+		// Convert the points from the canvas coordinate system to the group
+		// coords
 		// The parent of g is the canvas.
 		for (Circle c : selectedNode) {
 			if (c.getParent() == canvas) {
@@ -345,15 +374,17 @@ public class UDGraphLayoutController {
 						c.getCenterY());
 				c.setCenterX(parentToLocal.getX());
 				c.setCenterY(parentToLocal.getY());
-			}else{
+			} else {
 				Parent circleParent = c.getParent();
-				Point2D localToScene = circleParent.localToScene(c.getCenterX(), c.getCenterY());
+				Point2D localToScene = circleParent.localToScene(
+						c.getCenterX(), c.getCenterY());
 				Point2D sceneToLocal = g.sceneToLocal(localToScene);
 				c.setCenterX(sceneToLocal.getX());
 				c.setCenterY(sceneToLocal.getY());
 			}
-		};
-		
+		}
+		;
+
 		// move the graph nodes to the group
 		canvas.getChildren().removeAll(selectedNodes);
 		graphNodes.getChildren().addAll(selectedNode);
@@ -381,44 +412,50 @@ public class UDGraphLayoutController {
 			} else {
 				// determine if one end of the line is connected
 				if (selectedNodes.contains(start)) {
-					
-					if(l.getParent() != canvas){
+
+					if (l.getParent() != canvas) {
 						Group parent = (Group) l.getParent();
 						parent.getChildren().remove(l);
-						canvas.getChildren().add(l);	
-						
+						canvas.getChildren().add(l);
+
 						Parent endParent = end.getParent().getParent();
-						
-						System.out.println(endParent.layoutXProperty().toString());
+
+						System.out.println(endParent.layoutXProperty()
+								.toString());
 						l.endXProperty().bind(
-								end.centerXProperty().add(endParent.layoutXProperty()));
+								end.centerXProperty().add(
+										endParent.layoutXProperty()));
 						l.endYProperty().bind(
-								end.centerYProperty().add(endParent.layoutYProperty()));
-						
+								end.centerYProperty().add(
+										endParent.layoutYProperty()));
+
 					}
-					
+
 					l.startXProperty().bind(
 							start.centerXProperty().add(g.layoutXProperty()));
 					l.startYProperty().bind(
 							start.centerYProperty().add(g.layoutYProperty()));
 				}
 				if (selectedNodes.contains(end)) {
-					
-					if(l.getParent() != canvas){
+
+					if (l.getParent() != canvas) {
 						Group parent = (Group) l.getParent();
 						parent.getChildren().remove(l);
 						canvas.getChildren().add(l);
-						
+
 						Parent startParent = start.getParent().getParent();
-						
-						System.out.println(startParent.layoutXProperty().toString());
+
+						System.out.println(startParent.layoutXProperty()
+								.toString());
 						l.startXProperty().bind(
-								start.centerXProperty().add(startParent.layoutXProperty()));
+								start.centerXProperty().add(
+										startParent.layoutXProperty()));
 						l.startYProperty().bind(
-								start.centerYProperty().add(startParent.layoutYProperty()));
-						
+								start.centerYProperty().add(
+										startParent.layoutYProperty()));
+
 					}
-					
+
 					l.endXProperty().bind(
 							end.centerXProperty().add(g.layoutXProperty()));
 					l.endYProperty().bind(
@@ -426,9 +463,6 @@ public class UDGraphLayoutController {
 				}
 			}
 		}
-
-		selectionAnchors = new SelectionRectangle(bg, graphNodes, selectedNode, selectionGroup, graph, c, canvas);
-		g.getChildren().addAll(selectionAnchors.getAnchors());
 
 		bg.setOnMouseEntered(new EventHandler<MouseEvent>() {
 
@@ -556,6 +590,7 @@ public class UDGraphLayoutController {
 
 	/**
 	 * Paint a circle with the selected color
+	 * 
 	 * @param c
 	 */
 	public void paintSelection(Circle c) {
@@ -564,6 +599,7 @@ public class UDGraphLayoutController {
 
 	/**
 	 * Paint a circle the default color
+	 * 
 	 * @param c
 	 */
 	public void paintDefaultSelection(Circle c) {

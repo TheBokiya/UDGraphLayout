@@ -122,7 +122,7 @@ public class UDGraphLayout extends Application {
 		stage.show();
 
 		// ScenicView scenegraph debugger
-		ScenicView.show(scene);
+//		ScenicView.show(scene);
 	}
 
 	public static void main(String[] args) {

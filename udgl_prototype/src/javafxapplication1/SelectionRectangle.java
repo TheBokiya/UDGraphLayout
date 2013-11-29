@@ -35,11 +35,11 @@ import javafx.util.Duration;
 
 public class SelectionRectangle {
 
-	private Rectangle tl, tm, tr, r, br, bm, bl, l;
+	private Rectangle topLeft, topMid, topRight, right, bottomRight, bottomMid, bottomLeft, left;
 	private int anchorSize = 10;
 	private Color anchorColor = Color.BLACK;
-	private Rectangle rect;
 	private double initY;
+	private Rectangle rect;
 	private Color selectionStrokeColor = Color.web("#FF883E");
 	private Color selectionFillColor = Color.web("#FF883E", 0.1);
 	private double initX;
@@ -65,226 +65,228 @@ public class SelectionRectangle {
 		this.graph = graph;
 		this.c = c;
 
-
-		l = RectangleBuilder.create().x(rect.getX() - anchorSize / 2)
+		// Creating the 8 anchor points
+		left = RectangleBuilder.create().x(rect.getX() - anchorSize / 2)
 				.y(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2)
 				.width(anchorSize).height(anchorSize * 3).fill(anchorColor)
 				.build();
 
-		tl = RectangleBuilder.create().x(rect.getX() - anchorSize / 2)
+		topLeft = RectangleBuilder.create().x(rect.getX() - anchorSize / 2)
 				.y(rect.getY() - anchorSize / 2).width(anchorSize)
 				.height(anchorSize).fill(anchorColor).build();
 
-		bl = RectangleBuilder.create().x(rect.getX() - anchorSize / 2)
+		bottomLeft = RectangleBuilder.create().x(rect.getX() - anchorSize / 2)
 				.y(rect.getY() + rect.getHeight() - anchorSize / 2)
 				.width(anchorSize).height(anchorSize).fill(anchorColor).build();
 
-		tm = RectangleBuilder.create()
+		topMid = RectangleBuilder.create()
 				.x(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2)
 				.y(rect.getY() - anchorSize / 2).width(anchorSize * 3)
 				.height(anchorSize).fill(anchorColor).build();
 
-		bm = RectangleBuilder.create()
+		bottomMid = RectangleBuilder.create()
 				.x(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2)
 				.y(rect.getY() + rect.getHeight() - anchorSize / 2)
 				.width(anchorSize * 3).height(anchorSize).fill(anchorColor)
 				.build();
 
-		tr = RectangleBuilder.create()
+		topRight = RectangleBuilder.create()
 				.x(rect.getX() + rect.getWidth() - anchorSize / 2)
 				.y(rect.getY() - anchorSize / 2).width(anchorSize)
 				.height(anchorSize).fill(anchorColor).build();
 
-		r = RectangleBuilder.create()
+		right = RectangleBuilder.create()
 				.x(rect.getX() + rect.getWidth() - anchorSize / 2)
 				.y(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2)
 				.width(anchorSize).height(anchorSize * 3).fill(anchorColor)
 				.build();
 
-		br = RectangleBuilder.create()
+		bottomRight = RectangleBuilder.create()
 				.x(rect.getX() + rect.getWidth() - anchorSize / 2)
 				.y(rect.getY() + rect.getHeight() - anchorSize / 2)
 				.width(anchorSize).height(anchorSize).fill(anchorColor).build();
-
-		tl.setOnMouseEntered(new EventHandler<MouseEvent>() {
+		
+		// Add eventhandlers to the anchor points
+		topLeft.setOnMouseEntered(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleTopLeftAnchorMouseEntered(event);
 			}
 		});
 
-		tl.setOnMousePressed(new EventHandler<MouseEvent>() {
+		topLeft.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleTopLeftAnchorMousePressed(event);
 			}
 		});
 
-		tl.setOnMouseDragged(new EventHandler<MouseEvent>() {
+		topLeft.setOnMouseDragged(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleTopLeftAnchorMouseDragged(event);
 			}
 		});
 
-		tm.setOnMouseEntered(new EventHandler<MouseEvent>() {
+		topMid.setOnMouseEntered(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleTopMidAnchorMouseEntered(event);
 			}
 		});
 
-		tm.setOnMousePressed(new EventHandler<MouseEvent>() {
+		topMid.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleTopMidAnchorMousePressed(event);
 			}
 		});
 
-		tm.setOnMouseDragged(new EventHandler<MouseEvent>() {
+		topMid.setOnMouseDragged(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleTopMidAnchorMouseDragged(event);
 			}
 		});
 
-		tr.setOnMouseEntered(new EventHandler<MouseEvent>() {
+		topRight.setOnMouseEntered(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleTopRightAnchorMouseEntered(event);
 			}
 		});
 
-		tr.setOnMousePressed(new EventHandler<MouseEvent>() {
+		topRight.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleTopRightAnchorMousePressed(event);
 			}
 		});
 
-		tr.setOnMouseDragged(new EventHandler<MouseEvent>() {
+		topRight.setOnMouseDragged(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleTopRightAnchorMouseDragged(event);
 			}
 		});
 
-		r.setOnMouseEntered(new EventHandler<MouseEvent>() {
+		right.setOnMouseEntered(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleRightAnchorMouseEntered(event);
 			}
 		});
 
-		r.setOnMousePressed(new EventHandler<MouseEvent>() {
+		right.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleRightAnchorMousePressed(event);
 			}
 		});
 
-		r.setOnMouseDragged(new EventHandler<MouseEvent>() {
+		right.setOnMouseDragged(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleRightAnchorMouseDragged(event);
 			}
 		});
 
-		br.setOnMouseEntered(new EventHandler<MouseEvent>() {
+		bottomRight.setOnMouseEntered(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleBottomRightAnchorMouseEntered(event);
 			}
 		});
 
-		br.setOnMousePressed(new EventHandler<MouseEvent>() {
+		bottomRight.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleBottomRightAnchorMousePressed(event);
 			}
 		});
 
-		br.setOnMouseDragged(new EventHandler<MouseEvent>() {
+		bottomRight.setOnMouseDragged(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleBottomRightAnchorMouseDragged(event);
 			}
 		});
 
-		bm.setOnMouseEntered(new EventHandler<MouseEvent>() {
+		bottomMid.setOnMouseEntered(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleBottomMidAnchorMouseEntered(event);
 			}
 		});
 
-		bm.setOnMousePressed(new EventHandler<MouseEvent>() {
+		bottomMid.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleBottomMidAnchorMousePressed(event);
 			}
 		});
 
-		bm.setOnMouseDragged(new EventHandler<MouseEvent>() {
+		bottomMid.setOnMouseDragged(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleBottomMidAnchorMouseDragged(event);
 			}
 		});
 
-		bl.setOnMouseEntered(new EventHandler<MouseEvent>() {
+		bottomLeft.setOnMouseEntered(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleBottomLeftAnchorMouseEntered(event);
 			}
 		});
 
-		bl.setOnMousePressed(new EventHandler<MouseEvent>() {
+		bottomLeft.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleBottomLeftAnchorMousePressed(event);
 			}
 		});
 
-		bl.setOnMouseDragged(new EventHandler<MouseEvent>() {
+		bottomLeft.setOnMouseDragged(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleBottomLeftAnchorMouseDragged(event);
 			}
 		});
 
-		l.setOnMouseEntered(new EventHandler<MouseEvent>() {
+		left.setOnMouseEntered(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleLeftAnchorMouseEntered(event);
 			}
 		});
 
-		l.setOnMousePressed(new EventHandler<MouseEvent>() {
+		left.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleLeftAnchorMousePressed(event);
 			}
 		});
 
-		l.setOnMouseDragged(new EventHandler<MouseEvent>() {
+		left.setOnMouseDragged(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				handleLeftAnchorMouseDragged(event);
 			}
 		});
 
-		tr.xProperty().bind(r.xProperty());
-		br.xProperty().bind(r.xProperty());
+		// Bind the anchor points
+		topRight.xProperty().bind(right.xProperty());
+		bottomRight.xProperty().bind(right.xProperty());
 
-		bl.yProperty().bind(bm.yProperty());
-		br.yProperty().bind(bm.yProperty());
+		bottomLeft.yProperty().bind(bottomMid.yProperty());
+		bottomRight.yProperty().bind(bottomMid.yProperty());
 
-		tl.yProperty().bind(tm.yProperty());
-		tr.yProperty().bind(tm.yProperty());
+		topLeft.yProperty().bind(topMid.yProperty());
+		topRight.yProperty().bind(topMid.yProperty());
 
-		tl.xProperty().bind(l.xProperty());
-		bl.xProperty().bind(l.xProperty());
+		topLeft.xProperty().bind(left.xProperty());
+		bottomLeft.xProperty().bind(left.xProperty());
 	}
 
 	// Top left anchor eventhandler
@@ -297,27 +299,27 @@ public class SelectionRectangle {
 
 	public void handleTopLeftAnchorMouseEntered(MouseEvent event) {
 		animate();
-		tl.setCursor(new ImageCursor(NW_SE, 5, 5));
+		topLeft.setCursor(new ImageCursor(NW_SE, 5, 5));
 		event.consume();
 	}
 
 	public void handleTopLeftAnchorMouseDragged(MouseEvent event) {
-		tm.setY(event.getY());
-		l.setX(event.getX());
-		rect.setY(tl.getY());
-		rect.setX(tl.getX());
-		rect.setWidth(r.getX() - event.getX());
-		rect.setHeight(bm.getY() - event.getY());
+		topMid.setY(event.getY());
+		left.setX(event.getX());
+		rect.setY(topLeft.getY());
+		rect.setX(topLeft.getX());
+		rect.setWidth(right.getX() - event.getX());
+		rect.setHeight(bottomMid.getY() - event.getY());
 
-		tm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
-		tm.setY(rect.getY() - anchorSize / 2);
+		topMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		topMid.setY(rect.getY() - anchorSize / 2);
 
-		l.setX(rect.getX() - anchorSize / 2);
-		l.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		left.setX(rect.getX() - anchorSize / 2);
+		left.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 
-		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
-		//
-		bm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		right.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		
+		bottomMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
 		
 		resize();
 
@@ -333,18 +335,18 @@ public class SelectionRectangle {
 
 	public void handleTopMidAnchorMouseEntered(MouseEvent event) {
 		animate();
-		tm.setCursor(Cursor.V_RESIZE);
+		topMid.setCursor(Cursor.V_RESIZE);
 		event.consume();
 	}
 
 	public void handleTopMidAnchorMouseDragged(MouseEvent event) {
-		tm.setY(event.getY());
-		rect.setY(tm.getY());
-		rect.setHeight(bl.getY() - tl.getY());
+		topMid.setY(event.getY());
+		rect.setY(topMid.getY());
+		rect.setHeight(bottomLeft.getY() - topLeft.getY());
 
-		tm.setY(rect.getY() - anchorSize / 2);
-		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
-		l.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		topMid.setY(rect.getY() - anchorSize / 2);
+		right.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		left.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 		resize();
 		event.consume();
 	}
@@ -358,27 +360,27 @@ public class SelectionRectangle {
 
 	public void handleTopRightAnchorMouseEntered(MouseEvent event) {
 		animate();
-		tr.setCursor(new ImageCursor(NE_SW, 5, 5));
+		topRight.setCursor(new ImageCursor(NE_SW, 5, 5));
 		event.consume();
 	}
 
 	public void handleTopRightAnchorMouseDragged(MouseEvent event) {
-		tm.setY(event.getY());
-		r.setX(event.getX());
-		rect.setY(tr.getY());
-		rect.setWidth(event.getX() - tl.getX());
-		rect.setHeight(bl.getY() - event.getY());
+		topMid.setY(event.getY());
+		right.setX(event.getX());
+		rect.setY(topRight.getY());
+		rect.setWidth(event.getX() - topLeft.getX());
+		rect.setHeight(bottomLeft.getY() - event.getY());
 
-		tm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
-		tm.setY(rect.getY() - anchorSize / 2);
+		topMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		topMid.setY(rect.getY() - anchorSize / 2);
 
-		r.setX(rect.getX() + rect.getWidth() - anchorSize / 2);
-		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		right.setX(rect.getX() + rect.getWidth() - anchorSize / 2);
+		right.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 
-		l.setX(rect.getX() - anchorSize / 2);
-		l.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		left.setX(rect.getX() - anchorSize / 2);
+		left.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 
-		bm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		bottomMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
 		
 		resize();
 		event.consume();
@@ -393,17 +395,17 @@ public class SelectionRectangle {
 
 	public void handleRightAnchorMouseEntered(MouseEvent event) {
 		animate();
-		r.setCursor(Cursor.H_RESIZE);
+		right.setCursor(Cursor.H_RESIZE);
 		event.consume();
 	}
 
 	public void handleRightAnchorMouseDragged(MouseEvent event) {
-		r.setX(event.getX());
-		rect.setWidth(rectWidth + r.getX() - initX);
+		right.setX(event.getX());
+		rect.setWidth(rectWidth + right.getX() - initX);
 
-		r.setX(rect.getX() + rect.getWidth() - anchorSize / 2);
-		tm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
-		bm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		right.setX(rect.getX() + rect.getWidth() - anchorSize / 2);
+		topMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		bottomMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
 		resize();
 		event.consume();
 	}
@@ -417,27 +419,27 @@ public class SelectionRectangle {
 
 	public void handleBottomRightAnchorMouseEntered(MouseEvent event) {
 		animate();
-		br.setCursor(new ImageCursor(NW_SE, 5, 5));
+		bottomRight.setCursor(new ImageCursor(NW_SE, 5, 5));
 		event.consume();
 	}
 
 	public void handleBottomRightAnchorMouseDragged(MouseEvent event) {
-		bm.setY(event.getY());
-		r.setX(event.getX());
-		rect.setWidth(r.getX() - l.getX());
-		rect.setHeight(bm.getY() - tm.getY());
+		bottomMid.setY(event.getY());
+		right.setX(event.getX());
+		rect.setWidth(right.getX() - left.getX());
+		rect.setHeight(bottomMid.getY() - topMid.getY());
 
-		tm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
-		tm.setY(rect.getY() - anchorSize / 2);
+		topMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		topMid.setY(rect.getY() - anchorSize / 2);
 
-		bm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
-		bm.setY(rect.getY() + rect.getHeight() - anchorSize / 2);
+		bottomMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		bottomMid.setY(rect.getY() + rect.getHeight() - anchorSize / 2);
 
-		l.setX(rect.getX() - anchorSize / 2);
-		l.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		left.setX(rect.getX() - anchorSize / 2);
+		left.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 
-		r.setX(rect.getX() + rect.getWidth() - anchorSize / 2);
-		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		right.setX(rect.getX() + rect.getWidth() - anchorSize / 2);
+		right.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 		resize();
 		event.consume();
 	}
@@ -451,17 +453,17 @@ public class SelectionRectangle {
 
 	public void handleBottomMidAnchorMouseEntered(MouseEvent event) {
 		animate();
-		bm.setCursor(Cursor.V_RESIZE);
+		bottomMid.setCursor(Cursor.V_RESIZE);
 		event.consume();
 	}
 
 	public void handleBottomMidAnchorMouseDragged(MouseEvent event) {
-		bm.setY(event.getY());
-		rect.setHeight(rectHeight + bm.getY() - initY);
+		bottomMid.setY(event.getY());
+		rect.setHeight(rectHeight + bottomMid.getY() - initY);
 
-		bm.setY(rect.getY() + rect.getHeight() - anchorSize / 2);
-		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
-		l.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		bottomMid.setY(rect.getY() + rect.getHeight() - anchorSize / 2);
+		right.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		left.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 		resize();
 		event.consume();
 	}
@@ -475,26 +477,26 @@ public class SelectionRectangle {
 
 	public void handleBottomLeftAnchorMouseEntered(MouseEvent event) {
 		animate();
-		bl.setCursor(new ImageCursor(NE_SW, 5, 5));
+		bottomLeft.setCursor(new ImageCursor(NE_SW, 5, 5));
 		event.consume();
 	}
 
 	public void handleBottomLeftAnchorMouseDragged(MouseEvent event) {
-		bm.setY(event.getY());
-		l.setX(event.getX());
-		rect.setX(tl.getX());
-		rect.setWidth(r.getX() - l.getX());
-		rect.setHeight(bm.getY() - tm.getY());
+		bottomMid.setY(event.getY());
+		left.setX(event.getX());
+		rect.setX(topLeft.getX());
+		rect.setWidth(right.getX() - left.getX());
+		rect.setHeight(bottomMid.getY() - topMid.getY());
 
-		tm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
-		tm.setY(rect.getY() - anchorSize / 2);
+		topMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		topMid.setY(rect.getY() - anchorSize / 2);
 
-		bm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		bottomMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
 
-		l.setX(rect.getX() - anchorSize / 2);
-		l.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		left.setX(rect.getX() - anchorSize / 2);
+		left.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 
-		r.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
+		right.setY(rect.getY() + rect.getHeight() / 2 - anchorSize * 3 / 2);
 		resize();
 		event.consume();
 	}
@@ -507,35 +509,37 @@ public class SelectionRectangle {
 
 	public void handleLeftAnchorMouseEntered(MouseEvent event) {
 		animate();
-		l.setCursor(Cursor.H_RESIZE);
+		left.setCursor(Cursor.H_RESIZE);
 		event.consume();
 	}
 
 	public void handleLeftAnchorMouseDragged(MouseEvent event) {
-		l.setX(event.getX());
-		rect.setX(l.getX());
-		rect.setWidth(br.getX() - bl.getX());
+		left.setX(event.getX());
+		rect.setX(left.getX());
+		rect.setWidth(bottomRight.getX() - bottomLeft.getX());
 
-		l.setX(rect.getX() - anchorSize / 2);
-		tm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
-		bm.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		left.setX(rect.getX() - anchorSize / 2);
+		topMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
+		bottomMid.setX(rect.getX() + rect.getWidth() / 2 - anchorSize * 3 / 2);
 		resize();
 		event.consume();
 	}
 
+	// Get all the anchor points in an ArrayList
 	public ArrayList<Rectangle> getAnchors() {
 		ArrayList<Rectangle> arrayList = new ArrayList<>();
-		arrayList.add(tl);
-		arrayList.add(tm);
-		arrayList.add(tr);
-		arrayList.add(r);
-		arrayList.add(br);
-		arrayList.add(bm);
-		arrayList.add(bl);
-		arrayList.add(l);
+		arrayList.add(topLeft);
+		arrayList.add(topMid);
+		arrayList.add(topRight);
+		arrayList.add(right);
+		arrayList.add(bottomRight);
+		arrayList.add(bottomMid);
+		arrayList.add(bottomLeft);
+		arrayList.add(left);
 		return arrayList;
 	}
 
+	// Animate the anchor points to make sure they're not hidden
 	public void animate() {
 		fadeTransition(rect, 250, rect.getOpacity(), 1);
 		for (Circle c : getNodes(graphNodes)) {
@@ -579,8 +583,8 @@ public class SelectionRectangle {
 		return returnedArray;
 	}
 
+	// Update the sublayout
 	public void resize() {
-		// generate the graph from the selection
 		try {
 			if (!selectedNodes.isEmpty()) {
 				if (c != null) {
@@ -589,12 +593,12 @@ public class SelectionRectangle {
 							.getRoot().getBoundsInParent().getMinY());
 
 					generateLayoutFromSelection(selectedNodes, graph, c,
-							selectionGroup.getBackground());
+							rect);
 					
 
 					selectionGroup.getRoot().relocate(point.getX(), point.getY());
-					selectionGroup.getBackground().setWidth(r.getX() - l.getWidth());
-					selectionGroup.getBackground().setHeight(bm.getY() - tm.getY());
+					rect.setWidth(right.getX() - left.getWidth());
+					rect.setHeight(bottomMid.getY() - topMid.getY());
 				}
 			}
 
@@ -644,6 +648,7 @@ public class SelectionRectangle {
 			return subGraph;
 		}
 
+		// Get layout for a given graph
 		private Layout getLayoutFor(Class layoutClass, Graph graph)
 				throws Exception {
 			Object[] args = new Object[] { graph };

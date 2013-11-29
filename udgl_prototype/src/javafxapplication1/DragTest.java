@@ -40,7 +40,7 @@ public class DragTest extends Application {
 		c2.setCenterY(500);
 		c2.setOnMousePressed(circleMoveEventHandler);
 		c2.setOnMouseDragged(circleMoveEventHandler);
-
+		
 		Circle c3 = createCircle();
 		c3.setCenterX(500);
 		c3.setCenterY(100);
@@ -58,7 +58,14 @@ public class DragTest extends Application {
 		c1c2.startYProperty().bind(c1.centerYProperty());
 		c1c2.endXProperty().bind(c2.centerXProperty());
 		c1c2.endYProperty().bind(c2.centerYProperty());
-
+		
+		Rectangle r = RectangleBuilder.create().x(50).y(75).width(100)
+				.height(100).fill(Color.LIGHTCORAL).opacity(0.5).build();
+		Group leftGroup = new Group(r, c1, c2, c1c2);
+		leftGroup.setOnMousePressed(groupMoveEventHandler);
+		leftGroup.setOnMouseDragged(groupMoveEventHandler);
+		
+		
 		Line c3c4 = createLine();
 		c3c4.startXProperty().bind(c3.centerXProperty());
 		c3c4.startYProperty().bind(c3.centerYProperty());
@@ -66,27 +73,32 @@ public class DragTest extends Application {
 		c3c4.endYProperty().bind(c4.centerYProperty());
 
 		Line c1c4 = createLine();
-		c1c4.startXProperty().bind(c1.centerXProperty());
-		c1c4.startYProperty().bind(c1.centerYProperty());
+//		c1c4.startXProperty().bind(c1.centerXProperty());
+//		c1c4.startYProperty().bind(c1.centerYProperty());
 
 		moveableGroup = new Group();
-		Rectangle r = RectangleBuilder.create().x(450).y(75).width(100)
+		Rectangle r1 = RectangleBuilder.create().x(450).y(75).width(100)
 				.height(100).fill(Color.LIGHTGRAY).opacity(0.5).build();
 
 		lens = RectangleBuilder.create().x(300).y(300).width(100).height(100)
 				.fill(Color.WHITE).opacity(0.5).stroke(Color.BLUE)
 				.strokeWidth(2).build();
 
-		moveableGroup.getChildren().addAll(r, c3, c4, c3c4);
+		moveableGroup.getChildren().addAll(r1, c3, c4, c3c4);
 		moveableGroup.setOnMousePressed(groupMoveEventHandler);
 		moveableGroup.setOnMouseDragged(groupMoveEventHandler);
 
+		c1c4.startXProperty().bind(
+				c1.centerXProperty().add(leftGroup.layoutXProperty()));
+		c1c4.startYProperty().bind(
+				c1.centerYProperty().add(leftGroup.layoutYProperty()));
+		
 		c1c4.endXProperty().bind(
 				c4.centerXProperty().add(moveableGroup.layoutXProperty()));
 		c1c4.endYProperty().bind(
 				c4.centerYProperty().add(moveableGroup.layoutYProperty()));
 
-		root.getChildren().addAll(c1, c2, c1c2, c1c4, lens, moveableGroup);
+		root.getChildren().addAll(leftGroup, c1c4, moveableGroup);
 		Scene scene = new Scene(root, 600, 600);
 		stage.setScene(scene);
 		stage.setTitle("Drag Test");

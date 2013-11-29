@@ -1,18 +1,23 @@
 package javafxapplication1;
 
+import java.util.List;
+
 import javafx.beans.property.StringProperty;
 import javafx.scene.Group;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 
 public class Selection {
-	Group root, graphRoot;
-	Rectangle background;
-	StringProperty name;
+	private Group root, graphRoot;
+	private Rectangle background;
+	private StringProperty name;
+	private List<Circle> circles;
 	
-	public Selection(Group root, Group graphRoot, Rectangle background) {
+	public Selection(Group root, Group graphRoot, Rectangle background, List<Circle> circles) {
 		this.root = root;
 		this.graphRoot = graphRoot;
 		this.background = background;
+		this.circles = circles;
 	}
 
 	public Group getRoot() {
@@ -51,5 +56,17 @@ public class Selection {
 		return name;
 	}
 	
-	
+	public void correctCirclePositions(){
+		double smallestX = Double.MAX_VALUE;
+		double smallestY = Double.MAX_VALUE;
+		for(Circle c: circles){
+			smallestX = Math.min(smallestX, c.getCenterX());
+			smallestY = Math.min(smallestY, c.getCenterY());
+		}
+		
+		for(Circle c: circles){
+			c.setCenterX(c.getCenterX() - smallestX + 15);
+			c.setCenterY(c.getCenterY() - smallestY + 15);
+		}
+	}
 }

@@ -8,11 +8,9 @@ import java.util.Map;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToolBar;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -50,8 +48,12 @@ public class UDGraphLayout extends Application {
 		final UndirectedSparseMultigraph<Circle, Line> newGraph = convertGraph(
 				graph, layout);
 
+		// Create container for the UI
 		VBox container = new VBox();
 		ToolBar toolBar = new ToolBar();
+		final Pane canvas = new Pane();
+		
+		// Add a button for each layout type
 		for (Class c : controller.getLayoutClasses()) {
 			Button btn = new Button(c.getSimpleName());
 			btn.setUserData(c);
@@ -65,13 +67,16 @@ public class UDGraphLayout extends Application {
 			toolBar.getItems().add(btn);
 		}
 
-		final Pane canvas = new Pane();
+		// create a reference to the controller
 		controller = new UDGraphLayoutController(newGraph, canvas);
 
+		// Draw the default graph on the canvas
 		drawGraph(newGraph, canvas);
+		
+		// Add the toolbar and the canvas to the layout
 		container.getChildren().addAll(toolBar, canvas);
-		System.out.println(container.getChildren());
 
+		// Create the scene
 		Scene scene = new Scene(container, 1200, 800, Color.WHITE);
 		scene.addEventFilter(KeyEvent.KEY_PRESSED,
 				new EventHandler<KeyEvent>() {
@@ -81,6 +86,7 @@ public class UDGraphLayout extends Application {
 					}
 				});
 
+		// Add events to handle mouse selection
 		canvas.setOnMousePressed(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
@@ -110,11 +116,13 @@ public class UDGraphLayout extends Application {
 			}
 		});
 
+		// Setup the stage for display
 		stage.setTitle("User Definable Graph Layout Demo");
 		stage.setScene(scene);
 		stage.show();
 
-		 ScenicView.show(scene);
+		// ScenicView scenegraph debugger
+		ScenicView.show(scene);
 	}
 
 	public static void main(String[] args) {

@@ -25,8 +25,10 @@ public class GroupMoveHandler implements EventHandler<MouseEvent> {
 		} else if (e.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
 			Node node = (Node) e.getSource();
 
-			node.setLayoutX(moveContext.getDragDestX(e.getSceneX()));
-			node.setLayoutY(moveContext.getDragDestY(e.getSceneY()));
+			node.relocate(moveContext.getDragDestX(e.getSceneX()), 
+					moveContext.getDragDestY(e.getSceneY()));
+			
+			System.out.println("LayoutX/Y from event:" + node.getLayoutX() + ", " + node.getLayoutY());
 			e.consume();
 
 		} else if (e.getEventType().equals(MouseEvent.MOUSE_RELEASED)) {

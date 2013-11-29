@@ -1,5 +1,6 @@
 package javafxapplication1;
 
+
 import java.util.List;
 
 import javafx.beans.property.StringProperty;
@@ -19,6 +20,8 @@ public class Selection {
 		this.background = background;
 		this.circles = circles;
 	}
+
+
 
 	public Group getRoot() {
 		return root;

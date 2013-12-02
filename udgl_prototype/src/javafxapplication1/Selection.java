@@ -13,12 +13,14 @@ public class Selection {
 	private Rectangle background;
 	private StringProperty name;
 	private List<Circle> circles;
+	private SelectionRectangle selectionAnchors;
 	
-	public Selection(Group root, Group graphRoot, Rectangle background, List<Circle> circles) {
+	public Selection(Group root, Group graphRoot, Rectangle background, List<Circle> circles, SelectionRectangle selectionAnchors) {
 		this.root = root;
 		this.graphRoot = graphRoot;
 		this.background = background;
 		this.circles = circles;
+		this.selectionAnchors = selectionAnchors;
 	}
 
 
@@ -59,6 +61,20 @@ public class Selection {
 		return name;
 	}
 	
+	
+	
+	public SelectionRectangle getSelectionAnchors() {
+		return selectionAnchors;
+	}
+
+
+
+	public void setSelectionAnchors(SelectionRectangle selectionAnchors) {
+		this.selectionAnchors = selectionAnchors;
+	}
+
+
+
 	public void correctCirclePositions(){
 		double smallestX = Double.MAX_VALUE;
 		double smallestY = Double.MAX_VALUE;

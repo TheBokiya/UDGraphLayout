@@ -6,10 +6,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Slider;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -52,27 +55,13 @@ public class UDGraphLayout extends Application {
 		VBox container = new VBox();
 		ToolBar toolBar = new ToolBar();
 		final Pane canvas = new Pane();
-		
-		// Add a button for each layout type
-		for (Class c : controller.getLayoutClasses()) {
-			Button btn = new Button(c.getSimpleName());
-			btn.setUserData(c);
-			btn.setOnAction(new EventHandler<ActionEvent>() {
-
-				@Override
-				public void handle(ActionEvent event) {
-					controller.handleLayoutButtonAction(event);
-				}
-			});
-			toolBar.getItems().add(btn);
-		}
 
 		// create a reference to the controller
 		controller = new UDGraphLayoutController(newGraph, canvas);
 
 		// Draw the default graph on the canvas
 		drawGraph(newGraph, canvas);
-		
+
 		// Add the toolbar and the canvas to the layout
 		container.getChildren().addAll(toolBar, canvas);
 
@@ -107,14 +96,40 @@ public class UDGraphLayout extends Application {
 				controller.handleMouseReleased(event);
 			}
 		});
-		
+
 		scene.setOnKeyTyped(new EventHandler<KeyEvent>() {
 			@Override
 			public void handle(KeyEvent event) {
 				System.out.println(event.getText());
-				
+
 			}
 		});
+
+		// Add a button for each layout type
+		for (Class c : controller.getLayoutClasses()) {
+			Button btn = new Button(c.getSimpleName());
+			btn.setUserData(c);
+			btn.setOnAction(new EventHandler<ActionEvent>() {
+
+				@Override
+				public void handle(ActionEvent event) {
+					controller.handleLayoutButtonAction(event);
+				}
+			});
+			toolBar.getItems().add(btn);
+		}
+		
+		// Add a slider to control the layout size
+		Slider layoutSize = new Slider(10, 500, 100);
+		layoutSize.valueProperty().addListener(new ChangeListener<Number>() {
+
+			@Override
+			public void changed(ObservableValue<? extends Number> observable,
+					Number oldValue, Number newValue) {
+				controller.handleResizing(newValue);
+			}
+		});
+		toolBar.getItems().add(layoutSize);
 
 		// Setup the stage for display
 		stage.setTitle("User Definable Graph Layout Demo");
@@ -122,7 +137,7 @@ public class UDGraphLayout extends Application {
 		stage.show();
 
 		// ScenicView scenegraph debugger
-//		ScenicView.show(scene);
+		ScenicView.show(scene);
 	}
 
 	public static void main(String[] args) {

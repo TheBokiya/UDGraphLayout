@@ -60,11 +60,12 @@ public class UDGraphLayoutController {
 	private Color defaultNodeColor = Color.web("#5C4B51");
 	private Color selectedNodeColor = Color.web("F06060");
 	private Selection selectionGroup;
-	private SelectionRectangle selectionAnchors;
-	private Group graphNodes;
-	private Group g;
+	private SelectionRectangle selectionAnchors = null;
+	// private Group graphNodes;
+	// private Group g;
 	private Class c;
 	private Rectangle bg;
+	private ArrayList<Circle> activeSelection;
 
 	public UDGraphLayoutController(
 			UndirectedSparseMultigraph<Circle, Line> graph, Pane canvas) {
@@ -179,10 +180,8 @@ public class UDGraphLayoutController {
 			selectedGroup.setLayoutX(point.getX());
 			selectedGroup.setLayoutY(point.getY());
 
-			System.out.println("LayoutX/Y after creation:"
-					+ selectedGroup.getLayoutX() + ", "
-					+ selectedGroup.getLayoutY());
 			canvas.getChildren().remove(selectionRectangle);
+			System.out.println(activeSelection);
 		}
 	}
 
@@ -198,18 +197,46 @@ public class UDGraphLayoutController {
 
 		// generate the graph from the selection
 		try {
-			if (!selectedNodes.isEmpty()) {
+			if (!activeSelection.isEmpty()) {
 
 				Point2D point = new Point2D(selectionGroup.getRoot()
 						.getBoundsInParent().getMinX(), selectionGroup
 						.getRoot().getBoundsInParent().getMinY());
 
-				generateLayoutFromSelection(selectedNodes, graph, c,
+				generateLayoutFromSelection(activeSelection, graph, c,
 						selectionGroup.getBackground());
 
+				// System.out.println(g.getChildren());
 				selectionGroup.getRoot().relocate(point.getX(), point.getY());
 
 				canvas.getChildren().remove(selectionRectangle);
+
+			}
+
+		} catch (Exception ex) {
+			Logger.getLogger(JavaFXApplication1.class.getName()).log(
+					Level.SEVERE, null, ex);
+		}
+	}
+
+	// Handle the resizing of the layout
+	public void handleResizing(Number newValue) {
+		Rectangle rect = RectangleBuilder.create()
+				.width(newValue.intValue())
+				.height(newValue.intValue())
+				.build();
+		try {
+			if (!selectedNodes.isEmpty()) {
+				if (c != null) {
+					Point2D point = new Point2D(selectionGroup.getRoot()
+							.getBoundsInParent().getMinX(), selectionGroup
+							.getRoot().getBoundsInParent().getMinY());
+
+					generateLayoutFromSelection(selectedNodes, graph, c, rect);
+
+					selectionGroup.getRoot().relocate(point.getX(),
+							point.getY());
+				}
 			}
 
 		} catch (Exception ex) {
@@ -313,6 +340,7 @@ public class UDGraphLayoutController {
 
 			@Override
 			public void handle(MouseEvent event) {
+				g.getChildren().removeAll(selectionAnchors.getAnchors());
 				fadeTransition(bg, 250, bg.getOpacity(), 1);
 				for (Circle c : getNodes(graphNodes)) {
 					fillTransition(c, 250, (Color) c.getFill(),
@@ -333,6 +361,17 @@ public class UDGraphLayoutController {
 			}
 		});
 
+		bg.setOnMousePressed(new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent event) {
+				activeSelection = getNodes(graphNodes);
+				System.out.println(activeSelection);
+			}
+		});
+
+		activeSelection = selectedNode;
+
 		// drive the background's size with the bounds of the graphnodes
 		graphNodes.boundsInParentProperty().addListener(
 				new ChangeListener<Bounds>() {
@@ -351,17 +390,22 @@ public class UDGraphLayoutController {
 						if (selectionAnchors != null) {
 							if (g.getChildren().containsAll(
 									selectionAnchors.getAnchors())) {
+								System.out.println("TEST");
 								g.getChildren().removeAll(
 										selectionAnchors.getAnchors());
 							}
 						}
-						
+
 						// Create new anchor points and add to the group
 						selectionAnchors = new SelectionRectangle(bg,
-								graphNodes, selectedNode, selectionGroup,
+								graphNodes, activeSelection, selectionGroup,
 								graph, c, canvas);
-						g.getChildren().addAll(selectionAnchors.getAnchors());
 
+						// if (!g.getChildren().containsAll(
+						// selectionAnchors.getAnchors())) {
+						// g.getChildren().addAll(
+						// selectionAnchors.getAnchors());
+						// }
 					}
 				});
 
@@ -420,8 +464,6 @@ public class UDGraphLayoutController {
 
 						Parent endParent = end.getParent().getParent();
 
-						System.out.println(endParent.layoutXProperty()
-								.toString());
 						l.endXProperty().bind(
 								end.centerXProperty().add(
 										endParent.layoutXProperty()));
@@ -445,8 +487,6 @@ public class UDGraphLayoutController {
 
 						Parent startParent = start.getParent().getParent();
 
-						System.out.println(startParent.layoutXProperty()
-								.toString());
 						l.startXProperty().bind(
 								start.centerXProperty().add(
 										startParent.layoutXProperty()));
@@ -495,7 +535,8 @@ public class UDGraphLayoutController {
 			}
 		});
 
-		Selection selection = new Selection(g, graphNodes, bg, selectedNodes);
+		Selection selection = new Selection(g, graphNodes, bg, selectedNodes,
+				selectionAnchors);
 
 		return selection;
 	}
